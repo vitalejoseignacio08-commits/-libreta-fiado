@@ -1,6 +1,6 @@
 {
-  "name": "Libreta de Fiado",
-  "short_name": "Fiado",
+  "name": "Cuentas Claras",
+  "short_name": "Cuentas Claras",
   "description": "Llevá las cuentas de tus clientes fiados desde el celular.",
   "start_url": "./index.html",
   "scope": "./",

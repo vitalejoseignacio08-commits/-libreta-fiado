@@ -4,45 +4,117 @@
    no técnicos (a veces mayores).
    =========================================== */
 
+:root {
+  /* Colores */
+  --color-primario: #1b4332;
+  --color-primario-claro: #2d6a4f;
+  --color-acento: #2d6a4f;
+  --color-acento-oscuro: #1b4332;
+  --color-peligro: #d62828;
+  --color-peligro-suave: #ffe5e5;
+  --color-whatsapp: #25d366;
+  --color-texto: #1a1f1c;
+  --color-texto-secundario: #6b7280;
+  --color-fondo: #f4f4f4;
+  --color-borde: #e7e9e5;
+
+  /* Espaciado y formas */
+  --radio-chico: 10px;
+  --radio-mediano: 14px;
+  --radio-grande: 18px;
+  --sombra-tarjeta: 0 1px 2px rgba(16, 24, 20, 0.04), 0 3px 10px rgba(16, 24, 20, 0.06);
+  --sombra-flotante: 0 6px 18px rgba(27, 67, 50, 0.3);
+
+  /* Curvas de animación con más "punch" que las genéricas del navegador */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
 * {
   box-sizing: border-box;
+}
+
+button {
+  transition: background-color 140ms var(--ease-out), transform 140ms var(--ease-out);
+  font-family: inherit;
+}
+
+button:active {
+  transform: scale(0.97);
 }
 
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background-color: #f4f4f4;
-  color: #222;
-  font-size: 18px;
-  padding-bottom: 90px; /* deja lugar para el botón flotante */
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-size: 17px;
+  line-height: 1.45;
+  padding-bottom: 96px; /* deja lugar para el botón flotante */
+  -webkit-font-smoothing: antialiased;
 }
 
 .pantalla {
   max-width: 480px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 18px 16px;
+}
+
+/* Animación suave al entrar a una pantalla (se activa agregando
+   la clase "animar-entrada" desde app.js al mostrarla) */
+.pantalla.animar-entrada {
+  animation: aparecer-pantalla 220ms var(--ease-out);
+}
+
+@keyframes aparecer-pantalla {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Entrada escalonada de los ítems de una lista (clientes, movimientos).
+   El retraso de cada uno se fija desde app.js con animation-delay. */
+@keyframes aparecer-item {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- Encabezado con el total "en la calle" --- */
 .encabezado-total {
-  background-color: #1b4332;
+  background: linear-gradient(135deg, var(--color-primario), var(--color-primario-claro));
   color: white;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: var(--radio-grande);
+  padding: 24px 20px;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  box-shadow: var(--sombra-flotante);
 }
 
 .etiqueta-total {
   margin: 0;
-  font-size: 16px;
-  opacity: 0.85;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
 }
 
 .monto-total {
-  margin: 4px 0 0;
-  font-size: 36px;
-  font-weight: bold;
+  margin: 6px 0 0;
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 /* --- Buscador --- */
@@ -52,10 +124,20 @@ body {
 
 .buscador input {
   width: 100%;
-  padding: 14px;
-  font-size: 18px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 17px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
+  background-color: white;
+  transition: border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
+}
+
+.buscador input:focus,
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-primario-claro);
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.15);
 }
 
 /* --- Lista de clientes --- */
@@ -70,146 +152,285 @@ body {
   justify-content: space-between;
   align-items: center;
   background-color: white;
-  border-radius: 10px;
-  padding: 14px 16px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-mediano);
+  padding: 15px 16px;
   margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--sombra-tarjeta);
+  cursor: pointer;
+  opacity: 0;
+  animation: aparecer-item 240ms var(--ease-out) forwards;
+  transition: transform 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
+}
+
+.item-cliente:active {
+  transform: scale(0.98);
+  box-shadow: var(--sombra-tarjeta);
 }
 
 .item-cliente .nombre-cliente {
   font-weight: 600;
-  font-size: 17px;
+  font-size: 16px;
+  color: var(--color-texto);
 }
 
 .item-cliente .saldo-cliente {
-  font-weight: bold;
+  font-weight: 700;
   font-size: 17px;
 }
 
-/* Aviso visual: hace más de 30 días que no paga */
+/* Aviso visual: hace más de 15 días que no paga */
 .item-cliente.atrasado {
-  border-left: 5px solid #d62828;
+  border-left: 4px solid var(--color-peligro);
 }
 
 .item-cliente.atrasado .saldo-cliente {
-  color: #d62828;
+  color: var(--color-peligro);
 }
 
 .aviso-vacio {
   text-align: center;
-  color: #666;
-  margin-top: 40px;
+  color: var(--color-texto-secundario);
+  margin-top: 48px;
+  font-size: 16px;
 }
 
 /* --- Botón flotante "+ Nuevo cliente" --- */
+.boton-flotante[hidden] {
+  display: none;
+}
+
 .boton-flotante {
   position: fixed;
-  bottom: 16px;
+  bottom: 18px;
   left: 16px;
   right: 16px;
   max-width: 448px;
   margin: 0 auto;
   display: block;
-  background-color: #2d6a4f;
+  background-color: var(--color-primario-claro);
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: var(--radio-mediano);
+  padding: 17px;
   font-size: 18px;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+  box-shadow: var(--sombra-flotante);
 }
 
 .boton-flotante:active {
-  background-color: #1b4332;
+  background-color: var(--color-primario);
 }
 
 /* --- Pantalla Nuevo Cliente / formularios en general --- */
 .titulo-pantalla {
   text-align: center;
   margin-bottom: 20px;
+  font-size: 22px;
 }
 
 .etiqueta-campo {
   display: block;
   margin: 16px 0 6px;
   font-weight: 600;
+  font-size: 15px;
+  color: var(--color-texto-secundario);
 }
 
-#form-nuevo-cliente input {
+#form-nuevo-cliente input,
+#form-cargar-movimiento input,
+#form-ajustes input,
+#form-activacion input {
   width: 100%;
-  padding: 14px;
-  font-size: 18px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 17px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
+  background-color: white;
+  transition: border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
 }
 
 .boton-principal,
 .boton-secundario {
   width: 100%;
   padding: 16px;
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 17px;
+  font-weight: 700;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radio-mediano);
   margin-top: 20px;
 }
 
 .boton-principal {
-  background-color: #2d6a4f;
+  background-color: var(--color-primario-claro);
   color: white;
+  box-shadow: 0 3px 10px rgba(45, 106, 79, 0.25);
 }
 
 .boton-principal:active {
-  background-color: #1b4332;
+  background-color: var(--color-primario);
 }
 
 .boton-secundario {
-  background-color: #e9ecef;
-  color: #333;
+  background-color: white;
+  color: var(--color-texto);
+  border: 1px solid var(--color-borde);
 }
 
 .boton-secundario:active {
-  background-color: #dcdfe3;
+  background-color: #eef0ed;
 }
 
 .mensaje-error {
-  color: #d62828;
+  color: var(--color-peligro);
   margin-top: 16px;
   margin-bottom: 0;
+  font-size: 15px;
 }
 
-.item-cliente {
-  cursor: pointer;
+.item-movimiento {
+  opacity: 0;
+  animation: aparecer-item 240ms var(--ease-out) forwards;
+  transition: transform 120ms var(--ease-out);
+}
+
+.item-movimiento:active {
+  transform: scale(0.98);
 }
 
 /* --- Pantalla Ficha del Cliente --- */
 .boton-volver {
   background: none;
   border: none;
-  font-size: 17px;
-  color: #2d6a4f;
+  font-size: 16px;
+  color: var(--color-primario-claro);
   font-weight: 600;
   padding: 8px 0;
   margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icono-boton {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.fila-encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.boton-editar-cliente {
+  background: none;
+  border: none;
+  font-size: 15px;
+  color: var(--color-texto-secundario);
+  padding: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.boton-peligro {
+  width: 100%;
+  padding: 16px;
+  font-size: 17px;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radio-mediano);
+  margin-top: 12px;
+  background-color: white;
+  color: var(--color-peligro);
+  border: 2px solid var(--color-peligro);
+}
+
+.boton-peligro:active {
+  background-color: var(--color-peligro-suave);
+}
+
+/* --- Modal genérico (reemplaza alert()/confirm()) --- */
+.overlay-modal[hidden] {
+  display: none;
+}
+
+.overlay-modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(10, 15, 12, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+  animation: aparecer-overlay 160ms var(--ease-out);
+}
+
+@keyframes aparecer-overlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background-color: white;
+  border-radius: var(--radio-grande);
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 12px 32px rgba(10, 15, 12, 0.3);
+  animation: aparecer-modal 180ms var(--ease-out);
+  transform-origin: center;
+}
+
+@keyframes aparecer-modal {
+  from { transform: scale(0.95) translateY(6px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modal-mensaje {
+  margin: 0 0 20px;
+  font-size: 16px;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.modal-botones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-botones button {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radio-chico);
 }
 
 .encabezado-ficha {
-  background-color: #1b4332;
+  background: linear-gradient(135deg, var(--color-primario), var(--color-primario-claro));
   color: white;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: var(--radio-grande);
+  padding: 22px 20px;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  box-shadow: var(--sombra-flotante);
 }
 
 .nombre-ficha {
   margin: 0 0 4px;
+  font-size: 21px;
 }
 
 .telefono-ficha {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   opacity: 0.85;
+  font-size: 15px;
 }
 
 .botones-movimiento {
@@ -222,15 +443,16 @@ body {
 .boton-pago {
   flex: 1;
   padding: 16px;
-  font-size: 17px;
-  font-weight: bold;
+  font-size: 16px;
+  font-weight: 700;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radio-mediano);
   color: white;
 }
 
 .boton-fiado {
-  background-color: #d62828;
+  background-color: var(--color-peligro);
+  box-shadow: 0 3px 10px rgba(214, 40, 40, 0.25);
 }
 
 .boton-fiado:active {
@@ -238,11 +460,12 @@ body {
 }
 
 .boton-pago {
-  background-color: #2d6a4f;
+  background-color: var(--color-primario-claro);
+  box-shadow: 0 3px 10px rgba(45, 106, 79, 0.25);
 }
 
 .boton-pago:active {
-  background-color: #1b4332;
+  background-color: var(--color-primario);
 }
 
 /* --- Historial de movimientos --- */
@@ -257,49 +480,53 @@ body {
   justify-content: space-between;
   align-items: center;
   background-color: white;
-  border-radius: 10px;
-  padding: 12px 16px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-mediano);
+  padding: 13px 16px;
   margin-bottom: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--sombra-tarjeta);
+  cursor: pointer;
 }
 
 .item-movimiento .info-movimiento {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .item-movimiento .fecha-movimiento {
-  font-size: 14px;
-  color: #777;
+  font-size: 13px;
+  color: var(--color-texto-secundario);
 }
 
 .item-movimiento .detalle-movimiento {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .item-movimiento .monto-movimiento {
-  font-weight: bold;
-  font-size: 17px;
+  font-weight: 700;
+  font-size: 16px;
 }
 
 .item-movimiento.fiado .monto-movimiento {
-  color: #d62828;
+  color: var(--color-peligro);
 }
 
 .item-movimiento.pago .monto-movimiento {
-  color: #2d6a4f;
+  color: var(--color-primario-claro);
 }
 
 .boton-whatsapp {
   width: 100%;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: bold;
+  padding: 15px;
+  font-size: 15px;
+  font-weight: 700;
   border: none;
-  border-radius: 12px;
-  background-color: #25d366;
+  border-radius: var(--radio-mediano);
+  background-color: var(--color-whatsapp);
   color: white;
   margin-bottom: 16px;
+  box-shadow: 0 3px 10px rgba(37, 211, 102, 0.3);
 }
 
 .boton-whatsapp:active {
@@ -310,15 +537,18 @@ body {
 .barra-superior {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .boton-ajustes {
   background: none;
   border: none;
-  font-size: 16px;
-  color: #444;
+  font-size: 15px;
+  color: var(--color-texto-secundario);
   padding: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* --- Pantalla Ajustes --- */
@@ -327,25 +557,77 @@ body {
 }
 
 .texto-ayuda {
-  color: #666;
-  font-size: 15px;
+  color: var(--color-texto-secundario);
+  font-size: 14px;
   margin-top: 4px;
 }
 
 .separador {
   border: none;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--color-borde);
   margin: 28px 0;
-}
-
-#form-ajustes input {
-  width: 100%;
-  padding: 14px;
-  font-size: 18px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
 }
 
 #pantalla-ajustes .boton-secundario {
   margin-top: 12px;
+}
+
+/* --- Pantalla de Activación --- */
+.pantalla-activacion[hidden] {
+  display: none;
+}
+
+.pantalla-activacion {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tarjeta-activacion {
+  background-color: white;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 32px 24px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.logo-activacion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.icono-logo-activacion {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radio-chico);
+  box-shadow: var(--sombra-flotante);
+}
+
+.nombre-app-activacion {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-primario);
+  letter-spacing: -0.01em;
+}
+
+.texto-centrado {
+  text-align: center;
+}
+
+.mensaje-error-centrado {
+  text-align: center;
+}
+
+.input-codigo {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
 }

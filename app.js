@@ -4,11 +4,22 @@
    =========================================== */
 
 const CLAVE_STORAGE = "libreta-fiado-datos";
+const CLAVE_ACTIVACION = "libreta-fiado-activado";
+
+// Código numérico único para activar la app. Es el mismo para todos
+// los negocios a los que se la vendas (no hace falta uno por cliente).
+const CODIGO_ACTIVACION = "769246";
+
+// Techo para el monto de un fiado/pago, para avisar si alguien
+// se equivoca de ceros al escribir (ej. 100 millones de pesos)
+const LIMITE_MONTO = 100000000;
 
 // Guardan en qué cliente y qué tipo de movimiento estamos trabajando
 // mientras navegamos entre pantallas
 let clienteActualId = null;
 let tipoMovimientoActual = null; // "fiado" o "pago"
+let clienteEditandoId = null; // si no es null, el form de cliente está editando (no creando)
+let movimientoEditandoId = null; // si no es null, el form de movimiento está editando (no creando)
 
 /* -------------------------------------------
    Datos de ejemplo para la demo
@@ -59,26 +70,78 @@ function datosDeEjemplo() {
    el proyecto, por si el celular no permite
    guardar o el dato está corrupto)
    ------------------------------------------- */
+// Estructura vacía: así arranca un negocio real la primera vez
+function datosVacios() {
+  return {
+    negocio: {
+      nombre: "",
+    },
+    clientes: [],
+  };
+}
+
 function leerDatos() {
   try {
     const guardado = localStorage.getItem(CLAVE_STORAGE);
     if (!guardado) {
-      const ejemplo = datosDeEjemplo();
-      guardarDatos(ejemplo);
-      return ejemplo;
+      const vacio = datosVacios();
+      guardarDatos(vacio);
+      return vacio;
     }
     return JSON.parse(guardado);
   } catch (error) {
     console.error("Error al leer los datos guardados:", error);
-    return datosDeEjemplo();
+    return datosVacios();
   }
 }
 
 function guardarDatos(datos) {
   try {
     localStorage.setItem(CLAVE_STORAGE, JSON.stringify(datos));
+    return true;
   } catch (error) {
     console.error("Error al guardar los datos:", error);
+    avisarErrorDeGuardado();
+    return false;
+  }
+}
+
+// Si el navegador bloquea el almacenamiento (modo privado estricto,
+// configuración de privacidad), hoy en día nada avisa y el usuario
+// puede creer que guardó cuando en realidad no se guardó nada. Esto
+// lo deja bien visible en el momento en que falla.
+let avisoErrorGuardadoAbierto = false;
+function avisarErrorDeGuardado() {
+  if (avisoErrorGuardadoAbierto) return;
+  avisoErrorGuardadoAbierto = true;
+
+  mostrarAlerta(
+    "No se pudo guardar este cambio en el celular.\n\nEs probable que el navegador esté bloqueando el almacenamiento (modo incógnito o configuración de privacidad). Lo que acabás de hacer puede perderse si cerrás la app.\n\nProbá abrirla en modo normal (no incógnito), o revisá los permisos de almacenamiento del navegador."
+  ).then(() => {
+    avisoErrorGuardadoAbierto = false;
+  });
+}
+
+/* -------------------------------------------
+   Activación con código numérico
+   (se guarda separado de los datos del negocio,
+   así no se borra si se importa/exporta backup)
+   ------------------------------------------- */
+function estaActivado() {
+  try {
+    return localStorage.getItem(CLAVE_ACTIVACION) === "true";
+  } catch (error) {
+    console.error("Error al leer el estado de activación:", error);
+    return false;
+  }
+}
+
+function activarApp() {
+  try {
+    localStorage.setItem(CLAVE_ACTIVACION, "true");
+  } catch (error) {
+    console.error("Error al guardar la activación:", error);
+    avisarErrorDeGuardado();
   }
 }
 
@@ -101,7 +164,7 @@ function fechaUltimoPago(cliente) {
   return new Date(Math.max(...fechas));
 }
 
-// ¿Hace más de 30 días que no paga?
+// ¿Hace más de 15 días que no paga?
 function estaAtrasado(cliente) {
   const ultimoPago = fechaUltimoPago(cliente);
   // Si nunca pagó, usamos la fecha del primer fiado como referencia
@@ -110,7 +173,19 @@ function estaAtrasado(cliente) {
 
   const hoy = new Date();
   const diasSinPagar = (hoy - fechaReferencia) / (1000 * 60 * 60 * 24);
-  return diasSinPagar > 30;
+  return diasSinPagar > 15;
+}
+
+/* -------------------------------------------
+   Validar teléfono argentino: código de área + número,
+   sin el 0 ni el 15, son 10 números en total
+   (ej: 11 2233 4455, o 341 155 1234). El campo es
+   opcional, así que vacío también es válido.
+   ------------------------------------------- */
+function telefonoEsValido(telefono) {
+  const limpio = telefono.replace(/\D/g, "");
+  if (limpio === "") return true;
+  return limpio.length === 10;
 }
 
 /* -------------------------------------------
@@ -144,6 +219,26 @@ function fechaDeHoyISO() {
 function buscarClientePorId(id) {
   const datos = leerDatos();
   return datos.clientes.find((cliente) => cliente.id === id);
+}
+
+// Busca si ya existe otro cliente con ese nombre (sin distinguir
+// mayúsculas/espacios), para avisar antes de crear un duplicado
+// por error. "excluirId" es para no compararse contra sí mismo al editar.
+function existeClienteConNombre(nombre, excluirId) {
+  const datos = leerDatos();
+  const nombreNormalizado = nombre.trim().toLowerCase();
+
+  return datos.clientes.some(
+    (cliente) => cliente.id !== excluirId && cliente.nombre.trim().toLowerCase() === nombreNormalizado
+  );
+}
+
+// Evita que texto escrito por el usuario (nombre, detalle, nota) rompa
+// la pantalla si alguien pone símbolos como < o & en un campo.
+function escaparHtml(texto) {
+  const div = document.createElement("div");
+  div.textContent = texto;
+  return div.innerHTML;
 }
 
 /* -------------------------------------------
@@ -190,7 +285,7 @@ function enviarResumenPorWhatsapp(cliente) {
   const nombreNegocio = datos.negocio?.nombre || "nuestro negocio";
 
   if (!cliente.telefono) {
-    alert("Este cliente no tiene un teléfono guardado.");
+    mostrarAlerta("Este cliente no tiene un teléfono guardado.");
     return;
   }
 
@@ -213,6 +308,15 @@ function guardarNombreNegocio(nombre) {
   const datos = leerDatos();
   datos.negocio.nombre = nombre.trim();
   guardarDatos(datos);
+}
+
+/* -------------------------------------------
+   Demo: carga a pedido los clientes inventados,
+   solo para mostrar la app (no se usa más
+   automáticamente al abrir por primera vez)
+   ------------------------------------------- */
+function cargarDatosDeEjemplo() {
+  guardarDatos(datosDeEjemplo());
 }
 
 /* -------------------------------------------
@@ -295,20 +399,50 @@ function exportarDatos() {
   URL.revokeObjectURL(enlace.href);
 }
 
+// Chequea que el archivo tenga la forma exacta que espera la app,
+// campo por campo, para no romper la pantalla con un archivo corrupto
+// o de otra app.
+function estructuraDeDatosEsValida(datos) {
+  if (typeof datos !== "object" || datos === null) return false;
+  if (typeof datos.negocio !== "object" || datos.negocio === null) return false;
+  if (typeof datos.negocio.nombre !== "string") return false;
+  if (!Array.isArray(datos.clientes)) return false;
+
+  return datos.clientes.every((cliente) => {
+    if (typeof cliente !== "object" || cliente === null) return false;
+    if (typeof cliente.id !== "string") return false;
+    if (typeof cliente.nombre !== "string") return false;
+    if (typeof cliente.telefono !== "string") return false;
+    if (typeof cliente.nota !== "string") return false;
+    if (!Array.isArray(cliente.movimientos)) return false;
+
+    return cliente.movimientos.every((mov) => {
+      if (typeof mov !== "object" || mov === null) return false;
+      if (typeof mov.id !== "string") return false;
+      if (mov.tipo !== "fiado" && mov.tipo !== "pago") return false;
+      if (typeof mov.monto !== "number") return false;
+      if (typeof mov.detalle !== "string") return false;
+      if (typeof mov.fecha !== "string") return false;
+      return true;
+    });
+  });
+}
+
 function importarDatos(archivo) {
   const lector = new FileReader();
 
-  lector.onload = () => {
+  lector.onload = async () => {
     try {
       const datosImportados = JSON.parse(lector.result);
 
-      // Chequeo mínimo de que el archivo tenga la forma esperada
-      if (!Array.isArray(datosImportados.clientes) || !datosImportados.negocio) {
-        alert("El archivo no tiene el formato correcto de una copia de seguridad.");
+      if (!estructuraDeDatosEsValida(datosImportados)) {
+        mostrarAlerta(
+          "El archivo no tiene el formato correcto de una copia de seguridad de Cuentas Claras."
+        );
         return;
       }
 
-      const confirmar = confirm(
+      const confirmar = await mostrarConfirmacion(
         "Esto va a reemplazar todos los datos actuales por los del archivo. ¿Continuar?"
       );
       if (!confirmar) return;
@@ -316,10 +450,10 @@ function importarDatos(archivo) {
       guardarDatos(datosImportados);
       renderizarInicio();
       renderizarAjustes();
-      alert("Datos importados correctamente.");
+      mostrarAlerta("Datos importados correctamente.");
     } catch (error) {
       console.error("Error al importar datos:", error);
-      alert("No se pudo leer el archivo. ¿Es una copia de seguridad válida?");
+      mostrarAlerta("No se pudo leer el archivo. ¿Es una copia de seguridad válida?");
     }
   };
 
@@ -359,14 +493,15 @@ function renderizarInicio(filtro = "") {
   } else {
     avisoVacio.hidden = true;
 
-    clientesFiltrados.forEach((cliente) => {
+    clientesFiltrados.forEach((cliente, indice) => {
       const saldo = calcularSaldo(cliente);
       const atrasado = estaAtrasado(cliente);
 
       const item = document.createElement("li");
       item.className = "item-cliente" + (atrasado ? " atrasado" : "");
+      item.style.animationDelay = `${indice * 40}ms`;
       item.innerHTML = `
-        <span class="nombre-cliente">${cliente.nombre}</span>
+        <span class="nombre-cliente">${escaparHtml(cliente.nombre)}</span>
         <span class="saldo-cliente">${formatearMonto(saldo)}</span>
       `;
       item.addEventListener("click", () => {
@@ -404,20 +539,68 @@ function renderizarFicha() {
       (a, b) => new Date(b.fecha) - new Date(a.fecha)
     );
 
-    movimientosOrdenados.forEach((mov) => {
+    movimientosOrdenados.forEach((mov, indice) => {
       const signo = mov.tipo === "fiado" ? "+" : "-";
+      const detalleMostrado = mov.detalle || (mov.tipo === "fiado" ? "Fiado" : "Pago");
       const item = document.createElement("li");
       item.className = "item-movimiento " + mov.tipo;
+      item.style.animationDelay = `${indice * 40}ms`;
       item.innerHTML = `
         <span class="info-movimiento">
-          <span class="detalle-movimiento">${mov.detalle || (mov.tipo === "fiado" ? "Fiado" : "Pago")}</span>
+          <span class="detalle-movimiento">${escaparHtml(detalleMostrado)}</span>
           <span class="fecha-movimiento">${formatearFecha(mov.fecha)}</span>
         </span>
         <span class="monto-movimiento">${signo} ${formatearMonto(mov.monto)}</span>
       `;
+      // Tocar un movimiento lo abre para corregirlo o borrarlo
+      item.addEventListener("click", () => {
+        abrirEditarMovimiento(mov);
+      });
       lista.appendChild(item);
     });
   }
+}
+
+/* -------------------------------------------
+   Modal genérico: reemplaza los alert()/confirm()
+   del navegador por ventanitas con el estilo de la app.
+   Devuelven una Promise, así se pueden usar con await.
+   ------------------------------------------- */
+function abrirModal(mensaje, botones) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById("overlay-modal");
+    const contenedorBotones = document.getElementById("modal-botones");
+
+    document.getElementById("modal-mensaje").textContent = mensaje;
+    contenedorBotones.innerHTML = "";
+
+    botones.forEach((boton) => {
+      const elementoBoton = document.createElement("button");
+      elementoBoton.type = "button";
+      elementoBoton.className = boton.clase;
+      elementoBoton.textContent = boton.texto;
+      elementoBoton.addEventListener("click", () => {
+        overlay.hidden = true;
+        resolve(boton.valor);
+      });
+      contenedorBotones.appendChild(elementoBoton);
+    });
+
+    overlay.hidden = false;
+  });
+}
+
+// Reemplazo de alert(): un solo botón para aceptar
+function mostrarAlerta(mensaje) {
+  return abrirModal(mensaje, [{ texto: "Aceptar", clase: "boton-principal", valor: true }]);
+}
+
+// Reemplazo de confirm(): Cancelar o Confirmar. Se usa con "await".
+function mostrarConfirmacion(mensaje) {
+  return abrirModal(mensaje, [
+    { texto: "Cancelar", clase: "boton-secundario", valor: false },
+    { texto: "Confirmar", clase: "boton-peligro", valor: true },
+  ]);
 }
 
 /* -------------------------------------------
@@ -427,7 +610,16 @@ function renderizarFicha() {
    ------------------------------------------- */
 function mostrarPantalla(idPantalla) {
   document.querySelectorAll(".pantalla").forEach((pantalla) => {
-    pantalla.hidden = pantalla.id !== idPantalla;
+    const esLaQueSeMuestra = pantalla.id === idPantalla;
+    pantalla.hidden = !esLaQueSeMuestra;
+
+    if (esLaQueSeMuestra) {
+      // Reiniciamos la animación de entrada cada vez (aunque sea la
+      // misma pantalla), forzando un "reflow" entre quitarla y ponerla
+      pantalla.classList.remove("animar-entrada");
+      void pantalla.offsetWidth;
+      pantalla.classList.add("animar-entrada");
+    }
   });
 
   // El botón flotante sólo tiene sentido en la pantalla de Inicio
@@ -457,8 +649,26 @@ function agregarCliente(nombre, telefono, nota) {
   guardarDatos(datos);
 }
 
+function editarCliente(id, nombre, telefono, nota) {
+  const datos = leerDatos();
+  const cliente = datos.clientes.find((c) => c.id === id);
+  if (!cliente) return;
+
+  cliente.nombre = nombre.trim();
+  cliente.telefono = telefono.trim();
+  cliente.nota = nota.trim();
+
+  guardarDatos(datos);
+}
+
+function eliminarCliente(id) {
+  const datos = leerDatos();
+  datos.clientes = datos.clientes.filter((c) => c.id !== id);
+  guardarDatos(datos);
+}
+
 /* -------------------------------------------
-   Agregar un movimiento (fiado o pago) a un cliente
+   Agregar, editar y eliminar movimientos (fiado o pago)
    ------------------------------------------- */
 function agregarMovimiento(clienteId, tipo, monto, detalle, fecha) {
   const datos = leerDatos();
@@ -476,6 +686,65 @@ function agregarMovimiento(clienteId, tipo, monto, detalle, fecha) {
   guardarDatos(datos);
 }
 
+function editarMovimiento(clienteId, movimientoId, monto, detalle, fecha) {
+  const datos = leerDatos();
+  const cliente = datos.clientes.find((c) => c.id === clienteId);
+  if (!cliente) return;
+
+  const movimiento = cliente.movimientos.find((m) => m.id === movimientoId);
+  if (!movimiento) return;
+
+  movimiento.monto = monto;
+  movimiento.detalle = detalle.trim();
+  movimiento.fecha = fecha;
+
+  guardarDatos(datos);
+}
+
+function eliminarMovimiento(clienteId, movimientoId) {
+  const datos = leerDatos();
+  const cliente = datos.clientes.find((c) => c.id === clienteId);
+  if (!cliente) return;
+
+  cliente.movimientos = cliente.movimientos.filter((m) => m.id !== movimientoId);
+  guardarDatos(datos);
+}
+
+/* -------------------------------------------
+   Abrir la pantalla de Cargar Movimiento,
+   para uno nuevo o para editar uno existente
+   ------------------------------------------- */
+function abrirCargarMovimiento(tipo) {
+  tipoMovimientoActual = tipo;
+  movimientoEditandoId = null;
+
+  document.getElementById("titulo-cargar-movimiento").textContent =
+    tipo === "fiado" ? "Nuevo fiado" : "Nuevo pago";
+  document.getElementById("input-monto").value = "";
+  document.getElementById("input-detalle").value = "";
+  document.getElementById("input-fecha").value = fechaDeHoyISO();
+  document.getElementById("error-cargar-movimiento").hidden = true;
+  document.getElementById("boton-eliminar-movimiento").hidden = true;
+
+  mostrarPantalla("pantalla-cargar-movimiento");
+  document.getElementById("input-monto").focus();
+}
+
+function abrirEditarMovimiento(movimiento) {
+  tipoMovimientoActual = movimiento.tipo;
+  movimientoEditandoId = movimiento.id;
+
+  document.getElementById("titulo-cargar-movimiento").textContent =
+    movimiento.tipo === "fiado" ? "Editar fiado" : "Editar pago";
+  document.getElementById("input-monto").value = movimiento.monto;
+  document.getElementById("input-detalle").value = movimiento.detalle;
+  document.getElementById("input-fecha").value = movimiento.fecha;
+  document.getElementById("error-cargar-movimiento").hidden = true;
+  document.getElementById("boton-eliminar-movimiento").hidden = false;
+
+  mostrarPantalla("pantalla-cargar-movimiento");
+}
+
 /* -------------------------------------------
    Conexión con la interfaz (eventos)
    ------------------------------------------- */
@@ -489,7 +758,32 @@ if ("serviceWorker" in navigator) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  renderizarInicio();
+  // --- Pantalla de Activación: si no está activada, no deja entrar ---
+  if (!estaActivado()) {
+    mostrarPantalla("pantalla-activacion");
+  } else {
+    renderizarInicio();
+    mostrarPantalla("pantalla-inicio");
+  }
+
+  document.getElementById("form-activacion").addEventListener("submit", (evento) => {
+    evento.preventDefault();
+
+    const codigoIngresado = document
+      .getElementById("input-codigo-activacion")
+      .value.replace(/\D/g, ""); // deja sólo los números
+    const errorElemento = document.getElementById("error-activacion");
+
+    if (codigoIngresado === CODIGO_ACTIVACION) {
+      activarApp();
+      errorElemento.hidden = true;
+      renderizarInicio();
+      mostrarPantalla("pantalla-inicio");
+    } else {
+      errorElemento.textContent = "Código incorrecto. Revisá que esté bien escrito.";
+      errorElemento.hidden = false;
+    }
+  });
 
   const inputBuscar = document.getElementById("input-buscar");
   inputBuscar.addEventListener("input", (evento) => {
@@ -498,6 +792,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const botonNuevoCliente = document.getElementById("boton-nuevo-cliente");
   botonNuevoCliente.addEventListener("click", () => {
+    clienteEditandoId = null;
+    document.getElementById("titulo-nuevo-cliente").textContent = "Nuevo cliente";
+    document.getElementById("form-nuevo-cliente").reset();
+    document.getElementById("boton-eliminar-cliente").hidden = true;
+    mostrarPantalla("pantalla-nuevo-cliente");
+  });
+
+  // --- Editar cliente (desde la Ficha) ---
+  document.getElementById("boton-editar-cliente").addEventListener("click", () => {
+    const cliente = buscarClientePorId(clienteActualId);
+    if (!cliente) return;
+
+    clienteEditandoId = cliente.id;
+    document.getElementById("titulo-nuevo-cliente").textContent = "Editar cliente";
+    document.getElementById("input-nombre").value = cliente.nombre;
+    document.getElementById("input-telefono").value = cliente.telefono;
+    document.getElementById("input-nota").value = cliente.nota;
+    document.getElementById("error-nuevo-cliente").hidden = true;
+    document.getElementById("boton-eliminar-cliente").hidden = false;
+
     mostrarPantalla("pantalla-nuevo-cliente");
   });
 
@@ -505,11 +819,17 @@ document.addEventListener("DOMContentLoaded", () => {
   botonCancelar.addEventListener("click", () => {
     document.getElementById("form-nuevo-cliente").reset();
     document.getElementById("error-nuevo-cliente").hidden = true;
-    mostrarPantalla("pantalla-inicio");
+
+    if (clienteEditandoId) {
+      renderizarFicha();
+      mostrarPantalla("pantalla-ficha-cliente");
+    } else {
+      mostrarPantalla("pantalla-inicio");
+    }
   });
 
   const formNuevoCliente = document.getElementById("form-nuevo-cliente");
-  formNuevoCliente.addEventListener("submit", (evento) => {
+  formNuevoCliente.addEventListener("submit", async (evento) => {
     evento.preventDefault();
 
     const nombre = document.getElementById("input-nombre").value;
@@ -523,10 +843,42 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    agregarCliente(nombre, telefono, nota);
+    if (!telefonoEsValido(telefono)) {
+      errorElemento.textContent =
+        "El teléfono no es válido. Tiene que tener 10 números: código de área + número, sin el 0 ni el 15 (ej: 11 2233 4455).";
+      errorElemento.hidden = false;
+      return;
+    }
 
-    formNuevoCliente.reset();
+    if (existeClienteConNombre(nombre, clienteEditandoId)) {
+      const confirmar = await mostrarConfirmacion(
+        `Ya existe un cliente llamado "${nombre.trim()}". ¿Querés guardarlo igual?`
+      );
+      if (!confirmar) return;
+    }
+
     errorElemento.hidden = true;
+    formNuevoCliente.reset();
+
+    if (clienteEditandoId) {
+      editarCliente(clienteEditandoId, nombre, telefono, nota);
+      renderizarFicha();
+      mostrarPantalla("pantalla-ficha-cliente");
+    } else {
+      agregarCliente(nombre, telefono, nota);
+      renderizarInicio();
+      mostrarPantalla("pantalla-inicio");
+    }
+  });
+
+  // --- Eliminar cliente (solo visible cuando se está editando uno) ---
+  document.getElementById("boton-eliminar-cliente").addEventListener("click", async () => {
+    const confirmar = await mostrarConfirmacion(
+      "¿Seguro que querés eliminar este cliente? Se borra todo su historial y no se puede deshacer."
+    );
+    if (!confirmar) return;
+
+    eliminarCliente(clienteEditandoId);
     renderizarInicio();
     mostrarPantalla("pantalla-inicio");
   });
@@ -543,21 +895,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const cliente = buscarClientePorId(clienteActualId);
     if (cliente) enviarResumenPorWhatsapp(cliente);
   });
-
-  // --- Abrir la pantalla de Cargar Movimiento (Fiado o Pago) ---
-  function abrirCargarMovimiento(tipo) {
-    tipoMovimientoActual = tipo;
-
-    document.getElementById("titulo-cargar-movimiento").textContent =
-      tipo === "fiado" ? "Nuevo fiado" : "Nuevo pago";
-    document.getElementById("input-monto").value = "";
-    document.getElementById("input-detalle").value = "";
-    document.getElementById("input-fecha").value = fechaDeHoyISO();
-    document.getElementById("error-cargar-movimiento").hidden = true;
-
-    mostrarPantalla("pantalla-cargar-movimiento");
-    document.getElementById("input-monto").focus();
-  }
 
   document.getElementById("boton-nuevo-fiado").addEventListener("click", () => {
     abrirCargarMovimiento("fiado");
@@ -578,7 +915,8 @@ document.addEventListener("DOMContentLoaded", () => {
   formCargarMovimiento.addEventListener("submit", (evento) => {
     evento.preventDefault();
 
-    const monto = Number(document.getElementById("input-monto").value);
+    // Redondeamos a pesos enteros: la app no maneja centavos
+    const monto = Math.round(Number(document.getElementById("input-monto").value));
     const detalle = document.getElementById("input-detalle").value;
     const fecha = document.getElementById("input-fecha").value;
     const errorElemento = document.getElementById("error-cargar-movimiento");
@@ -589,14 +927,34 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (monto > LIMITE_MONTO) {
+      errorElemento.textContent = `El monto es demasiado grande. Revisá que no tenga ceros de más (el máximo es ${formatearMonto(LIMITE_MONTO)}).`;
+      errorElemento.hidden = false;
+      return;
+    }
+
     if (!fecha) {
       errorElemento.textContent = "Ingresá una fecha.";
       errorElemento.hidden = false;
       return;
     }
 
-    agregarMovimiento(clienteActualId, tipoMovimientoActual, monto, detalle, fecha);
+    if (movimientoEditandoId) {
+      editarMovimiento(clienteActualId, movimientoEditandoId, monto, detalle, fecha);
+    } else {
+      agregarMovimiento(clienteActualId, tipoMovimientoActual, monto, detalle, fecha);
+    }
 
+    renderizarFicha();
+    mostrarPantalla("pantalla-ficha-cliente");
+  });
+
+  // --- Eliminar movimiento (solo visible cuando se está editando uno) ---
+  document.getElementById("boton-eliminar-movimiento").addEventListener("click", async () => {
+    const confirmar = await mostrarConfirmacion("¿Seguro que querés eliminar este movimiento?");
+    if (!confirmar) return;
+
+    eliminarMovimiento(clienteActualId, movimientoEditandoId);
     renderizarFicha();
     mostrarPantalla("pantalla-ficha-cliente");
   });
@@ -616,7 +974,7 @@ document.addEventListener("DOMContentLoaded", () => {
     evento.preventDefault();
     const nombre = document.getElementById("input-nombre-negocio").value;
     guardarNombreNegocio(nombre);
-    alert("Datos del negocio guardados.");
+    mostrarAlerta("Datos del negocio guardados.");
   });
 
   // --- Descargar resumen legible (.txt) ---
@@ -639,5 +997,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const archivo = evento.target.files[0];
     if (archivo) importarDatos(archivo);
     inputImportarArchivo.value = ""; // permite volver a elegir el mismo archivo después
+  });
+
+  // --- Cargar datos de ejemplo (demo) ---
+  document.getElementById("boton-cargar-demo").addEventListener("click", async () => {
+    const confirmar = await mostrarConfirmacion(
+      "Esto va a reemplazar los datos actuales por los de ejemplo (demo). ¿Continuar?"
+    );
+    if (!confirmar) return;
+
+    cargarDatosDeEjemplo();
+    renderizarInicio();
+    renderizarAjustes();
+    mostrarAlerta("Datos de ejemplo cargados.");
   });
 });

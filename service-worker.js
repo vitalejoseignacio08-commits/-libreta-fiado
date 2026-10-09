@@ -6,7 +6,7 @@
 
 // Si cambiás archivos y querés que los celulares bajen la versión
 // nueva, subí este número (ej: "fiado-v2").
-const NOMBRE_CACHE = "fiado-v1";
+const NOMBRE_CACHE = "fiado-v8";
 
 const ARCHIVOS_APP = [
   "./",
@@ -39,12 +39,17 @@ self.addEventListener("activate", (evento) => {
   self.clients.claim();
 });
 
-// Al pedir un archivo: primero buscamos en la caché (funciona sin internet),
-// y si no está, lo buscamos en la red.
+// Al pedir un archivo: primero probamos la red (así siempre se ve la
+// versión más nueva), y actualizamos la caché con lo que llega.
+// Si no hay internet, ahí sí usamos la última copia guardada.
 self.addEventListener("fetch", (evento) => {
   evento.respondWith(
-    caches.match(evento.request).then((respuestaCache) => {
-      return respuestaCache || fetch(evento.request);
-    })
+    fetch(evento.request)
+      .then((respuestaRed) => {
+        const copia = respuestaRed.clone();
+        caches.open(NOMBRE_CACHE).then((cache) => cache.put(evento.request, copia));
+        return respuestaRed;
+      })
+      .catch(() => caches.match(evento.request))
   );
 });

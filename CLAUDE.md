@@ -1,7 +1,9 @@
-# Libreta de Fiado Digital
+# Cuentas Claras
 
 ## Qué es este proyecto
 App web instalable (PWA) para que comercios de pueblo lleven sus cuentas corrientes ("el fiado") desde el celular, en lugar del cuaderno de papel.
+
+**Identidad de marca:** nombre "Cuentas Claras". Paleta verde/roja (la original del proyecto): verde oscuro (`#1b4332` / `#2d6a4f`) como color principal, rojo (`#d62828`) para fiado/deuda, fondo gris claro (`#f4f4f4`).
 
 **Clientes objetivo:** forrajerías, agronomías, ferreterías, corralones, veterinarias rurales y almacenes de pueblos del interior de Argentina. Venden a cuenta corriente y hoy lo anotan en papel: pierden plata por olvidos, hay discusiones con clientes y no saben cuánto tienen "en la calle".
 
@@ -15,7 +17,7 @@ App web instalable (PWA) para que comercios de pueblo lleven sus cuentas corrien
 1. **Inicio**
    - Arriba, grande: "Tenés $X en la calle" (suma de todos los saldos).
    - Buscador de clientes.
-   - Lista de clientes ordenada por deuda (mayor primero), con aviso de color si hace mucho que no pagan (ej. más de 30 días sin pagos).
+   - Lista de clientes ordenada por deuda (mayor primero), con aviso de color si hace mucho que no pagan (más de 15 días sin pagos).
    - Botón "+ Nuevo cliente".
 2. **Ficha del cliente**
    - Nombre, teléfono, saldo actual.
