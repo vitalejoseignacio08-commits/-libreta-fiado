@@ -69,4 +69,4 @@ icons/
 - [x] Ajustes y copia de seguridad
 - [x] PWA instalable y funcionamiento sin internet
 - [x] Datos de ejemplo para la demo
-- [ ] Publicación
+- [x] Publicación — https://vitalejoseignacio08-commits.github.io/-libreta-fiado/
