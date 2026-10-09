@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Libreta de Fiado</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#1b4332">
+</head>
+<body>
+
+  <!-- Pantalla de Inicio -->
+  <main class="pantalla" id="pantalla-inicio">
+
+    <div class="barra-superior">
+      <button type="button" class="boton-ajustes" id="boton-ir-ajustes">⚙ Ajustes</button>
+    </div>
+
+    <header class="encabezado-total">
+      <p class="etiqueta-total">Tenés en la calle</p>
+      <p class="monto-total" id="monto-total">$ 0</p>
+    </header>
+
+    <div class="buscador">
+      <input
+        type="text"
+        id="input-buscar"
+        placeholder="Buscar cliente..."
+        autocomplete="off"
+      >
+    </div>
+
+    <ul class="lista-clientes" id="lista-clientes">
+      <!-- Los clientes se cargan desde app.js -->
+    </ul>
+
+    <p class="aviso-vacio" id="aviso-vacio" hidden>
+      No hay clientes todavía. Tocá "+ Nuevo cliente" para agregar el primero.
+    </p>
+
+  </main>
+
+  <button class="boton-flotante" id="boton-nuevo-cliente">
+    + Nuevo cliente
+  </button>
+
+  <!-- Pantalla Nuevo Cliente (oculta hasta que se necesite) -->
+  <main class="pantalla" id="pantalla-nuevo-cliente" hidden>
+
+    <h2 class="titulo-pantalla">Nuevo cliente</h2>
+
+    <form id="form-nuevo-cliente">
+      <label class="etiqueta-campo" for="input-nombre">Nombre</label>
+      <input
+        type="text"
+        id="input-nombre"
+        placeholder="Ej: Juan Pérez"
+        autocomplete="off"
+        required
+      >
+
+      <label class="etiqueta-campo" for="input-telefono">Teléfono</label>
+      <input
+        type="tel"
+        id="input-telefono"
+        placeholder="Ej: 11 2233 4455"
+        autocomplete="off"
+      >
+
+      <label class="etiqueta-campo" for="input-nota">Nota (opcional)</label>
+      <input
+        type="text"
+        id="input-nota"
+        placeholder="Ej: Campo La Esperanza"
+        autocomplete="off"
+      >
+
+      <p class="mensaje-error" id="error-nuevo-cliente" hidden></p>
+
+      <button type="submit" class="boton-principal">Guardar cliente</button>
+      <button type="button" class="boton-secundario" id="boton-cancelar-nuevo-cliente">
+        Cancelar
+      </button>
+    </form>
+
+  </main>
+
+  <!-- Pantalla Ficha del Cliente -->
+  <main class="pantalla" id="pantalla-ficha-cliente" hidden>
+
+    <button type="button" class="boton-volver" id="boton-volver-ficha">← Volver</button>
+
+    <header class="encabezado-ficha">
+      <h2 class="nombre-ficha" id="ficha-nombre"></h2>
+      <p class="telefono-ficha" id="ficha-telefono"></p>
+      <p class="etiqueta-total">Saldo actual</p>
+      <p class="monto-total" id="ficha-saldo">$ 0</p>
+    </header>
+
+    <div class="botones-movimiento">
+      <button type="button" class="boton-fiado" id="boton-nuevo-fiado">+ Fiado</button>
+      <button type="button" class="boton-pago" id="boton-nuevo-pago">+ Pago</button>
+    </div>
+
+    <button type="button" class="boton-whatsapp" id="boton-enviar-whatsapp">
+      Enviar resumen por WhatsApp
+    </button>
+
+    <ul class="lista-movimientos" id="lista-movimientos">
+      <!-- El historial se carga desde app.js -->
+    </ul>
+
+    <p class="aviso-vacio" id="aviso-sin-movimientos" hidden>
+      Todavía no hay movimientos con este cliente.
+    </p>
+
+  </main>
+
+  <!-- Pantalla Cargar Movimiento (Fiado o Pago) -->
+  <main class="pantalla" id="pantalla-cargar-movimiento" hidden>
+
+    <h2 class="titulo-pantalla" id="titulo-cargar-movimiento">Nuevo movimiento</h2>
+
+    <form id="form-cargar-movimiento">
+      <label class="etiqueta-campo" for="input-monto">Monto</label>
+      <input
+        type="number"
+        id="input-monto"
+        placeholder="0"
+        inputmode="numeric"
+        autocomplete="off"
+      >
+
+      <label class="etiqueta-campo" for="input-detalle">Detalle (opcional)</label>
+      <input
+        type="text"
+        id="input-detalle"
+        placeholder="Ej: Bolsa de maíz"
+        autocomplete="off"
+      >
+
+      <label class="etiqueta-campo" for="input-fecha">Fecha</label>
+      <input type="date" id="input-fecha">
+
+      <p class="mensaje-error" id="error-cargar-movimiento" hidden></p>
+
+      <button type="submit" class="boton-principal">Guardar</button>
+      <button type="button" class="boton-secundario" id="boton-cancelar-movimiento">
+        Cancelar
+      </button>
+    </form>
+
+  </main>
+
+  <!-- Pantalla Ajustes -->
+  <main class="pantalla" id="pantalla-ajustes" hidden>
+
+    <button type="button" class="boton-volver" id="boton-volver-ajustes">← Volver</button>
+
+    <h2 class="titulo-pantalla">Ajustes</h2>
+
+    <form id="form-ajustes">
+      <label class="etiqueta-campo" for="input-nombre-negocio">Nombre del negocio</label>
+      <input
+        type="text"
+        id="input-nombre-negocio"
+        placeholder="Ej: Forrajería San José"
+        autocomplete="off"
+      >
+      <p class="texto-ayuda">Este nombre aparece firmando los mensajes de WhatsApp.</p>
+
+      <button type="submit" class="boton-principal">Guardar</button>
+    </form>
+
+    <hr class="separador">
+
+    <h3 class="subtitulo">Resumen para leer</h3>
+    <p class="texto-ayuda">
+      Descarga un archivo de texto simple con la lista de clientes y lo que debe cada uno. Se puede abrir y leer directamente, sin nada técnico.
+    </p>
+
+    <button type="button" class="boton-secundario" id="boton-exportar-resumen">
+      Descargar resumen (.txt)
+    </button>
+
+    <hr class="separador">
+
+    <h3 class="subtitulo">Copia de seguridad</h3>
+    <p class="texto-ayuda">
+      Este archivo es para la app, no para leerlo: sirve para recuperar todo tal cual estaba si cambiás de celular o se borra la app.
+    </p>
+
+    <button type="button" class="boton-secundario" id="boton-exportar-datos">
+      Exportar copia de seguridad
+    </button>
+
+    <button type="button" class="boton-secundario" id="boton-importar-datos">
+      Importar copia de seguridad
+    </button>
+    <input type="file" id="input-importar-archivo" accept="application/json" hidden>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

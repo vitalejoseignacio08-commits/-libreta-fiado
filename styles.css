@@ -1,0 +1,351 @@
+/* ===========================================
+   Estilos generales - mobile first
+   Botones grandes y letra legible para usuarios
+   no técnicos (a veces mayores).
+   =========================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background-color: #f4f4f4;
+  color: #222;
+  font-size: 18px;
+  padding-bottom: 90px; /* deja lugar para el botón flotante */
+}
+
+.pantalla {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* --- Encabezado con el total "en la calle" --- */
+.encabezado-total {
+  background-color: #1b4332;
+  color: white;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.etiqueta-total {
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.85;
+}
+
+.monto-total {
+  margin: 4px 0 0;
+  font-size: 36px;
+  font-weight: bold;
+}
+
+/* --- Buscador --- */
+.buscador {
+  margin-bottom: 16px;
+}
+
+.buscador input {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+/* --- Lista de clientes --- */
+.lista-clientes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item-cliente {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.item-cliente .nombre-cliente {
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.item-cliente .saldo-cliente {
+  font-weight: bold;
+  font-size: 17px;
+}
+
+/* Aviso visual: hace más de 30 días que no paga */
+.item-cliente.atrasado {
+  border-left: 5px solid #d62828;
+}
+
+.item-cliente.atrasado .saldo-cliente {
+  color: #d62828;
+}
+
+.aviso-vacio {
+  text-align: center;
+  color: #666;
+  margin-top: 40px;
+}
+
+/* --- Botón flotante "+ Nuevo cliente" --- */
+.boton-flotante {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  max-width: 448px;
+  margin: 0 auto;
+  display: block;
+  background-color: #2d6a4f;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.boton-flotante:active {
+  background-color: #1b4332;
+}
+
+/* --- Pantalla Nuevo Cliente / formularios en general --- */
+.titulo-pantalla {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.etiqueta-campo {
+  display: block;
+  margin: 16px 0 6px;
+  font-weight: 600;
+}
+
+#form-nuevo-cliente input {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+.boton-principal,
+.boton-secundario {
+  width: 100%;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.boton-principal {
+  background-color: #2d6a4f;
+  color: white;
+}
+
+.boton-principal:active {
+  background-color: #1b4332;
+}
+
+.boton-secundario {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.boton-secundario:active {
+  background-color: #dcdfe3;
+}
+
+.mensaje-error {
+  color: #d62828;
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+.item-cliente {
+  cursor: pointer;
+}
+
+/* --- Pantalla Ficha del Cliente --- */
+.boton-volver {
+  background: none;
+  border: none;
+  font-size: 17px;
+  color: #2d6a4f;
+  font-weight: 600;
+  padding: 8px 0;
+  margin-bottom: 8px;
+}
+
+.encabezado-ficha {
+  background-color: #1b4332;
+  color: white;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.nombre-ficha {
+  margin: 0 0 4px;
+}
+
+.telefono-ficha {
+  margin: 0 0 12px;
+  opacity: 0.85;
+}
+
+.botones-movimiento {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.boton-fiado,
+.boton-pago {
+  flex: 1;
+  padding: 16px;
+  font-size: 17px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  color: white;
+}
+
+.boton-fiado {
+  background-color: #d62828;
+}
+
+.boton-fiado:active {
+  background-color: #a81d1d;
+}
+
+.boton-pago {
+  background-color: #2d6a4f;
+}
+
+.boton-pago:active {
+  background-color: #1b4332;
+}
+
+/* --- Historial de movimientos --- */
+.lista-movimientos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item-movimiento {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.item-movimiento .info-movimiento {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-movimiento .fecha-movimiento {
+  font-size: 14px;
+  color: #777;
+}
+
+.item-movimiento .detalle-movimiento {
+  font-size: 16px;
+}
+
+.item-movimiento .monto-movimiento {
+  font-weight: bold;
+  font-size: 17px;
+}
+
+.item-movimiento.fiado .monto-movimiento {
+  color: #d62828;
+}
+
+.item-movimiento.pago .monto-movimiento {
+  color: #2d6a4f;
+}
+
+.boton-whatsapp {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  background-color: #25d366;
+  color: white;
+  margin-bottom: 16px;
+}
+
+.boton-whatsapp:active {
+  background-color: #1ebe57;
+}
+
+/* --- Barra superior (botón Ajustes) --- */
+.barra-superior {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.boton-ajustes {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #444;
+  padding: 8px;
+}
+
+/* --- Pantalla Ajustes --- */
+.subtitulo {
+  margin-top: 0;
+}
+
+.texto-ayuda {
+  color: #666;
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+.separador {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 28px 0;
+}
+
+#form-ajustes input {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+#pantalla-ajustes .boton-secundario {
+  margin-top: 12px;
+}
