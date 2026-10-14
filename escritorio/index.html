@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuentas Claras - Escritorio</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#1b4332">
+</head>
+<body>
+
+  <header class="barra-superior">
+    <div class="marca">
+      <img src="../icons/icon.svg" alt="" class="icono-marca">
+      <div>
+        <p class="nombre-app">Cuentas Claras</p>
+        <p class="subtitulo-app" id="nombre-negocio">Panel de escritorio</p>
+      </div>
+    </div>
+
+    <div class="acciones-barra">
+      <p class="fecha-importacion" id="fecha-importacion" hidden></p>
+      <button type="button" class="boton-secundario" id="boton-importar">
+        Importar copia de seguridad
+      </button>
+      <input type="file" id="input-importar-archivo" accept="application/json" hidden>
+    </div>
+  </header>
+
+  <!-- Se muestra cuando todavía no se importó ningún backup -->
+  <main class="pantalla-vacia" id="pantalla-vacia">
+    <div class="tarjeta-vacia">
+      <img src="../icons/icon.svg" alt="" class="icono-vacio">
+      <h2>Todavía no importaste ningún backup</h2>
+      <p class="texto-ayuda">
+        Esta pantalla es para consultar en una pantalla grande los datos que ya cargaste desde el celular.
+        Exportá la copia de seguridad desde la app del celular (Ajustes &rarr; Copia de seguridad) y
+        después importala acá.
+      </p>
+      <button type="button" class="boton-principal" id="boton-importar-vacio">
+        Importar copia de seguridad
+      </button>
+    </div>
+  </main>
+
+  <!-- Contenido principal: se muestra una vez que hay datos importados -->
+  <main class="contenido" id="contenido" hidden>
+
+    <header class="encabezado-total">
+      <p class="etiqueta-total">Tenés en la calle</p>
+      <p class="monto-total" id="monto-total">$ 0</p>
+    </header>
+
+    <div class="panel-doble">
+
+      <!-- Columna izquierda: buscador + lista de clientes -->
+      <section class="columna-lista">
+        <div class="buscador">
+          <input type="text" id="input-buscar" placeholder="Buscar cliente..." autocomplete="off">
+        </div>
+
+        <ul class="lista-clientes" id="lista-clientes">
+          <!-- Se arma desde app.js -->
+        </ul>
+
+        <p class="aviso-vacio" id="aviso-sin-clientes" hidden>
+          No hay clientes cargados en este backup.
+        </p>
+      </section>
+
+      <!-- Columna derecha: ficha del cliente seleccionado -->
+      <section class="columna-ficha">
+        <div class="ficha-vacia" id="ficha-vacia">
+          <p class="texto-ayuda">Elegí un cliente de la lista para ver su cuenta.</p>
+        </div>
+
+        <div class="ficha-cliente" id="ficha-cliente" hidden>
+          <h2 class="nombre-ficha" id="ficha-nombre"></h2>
+          <p class="telefono-ficha" id="ficha-telefono"></p>
+          <p class="nota-ficha" id="ficha-nota"></p>
+
+          <p class="etiqueta-total">Saldo actual</p>
+          <p class="monto-total" id="ficha-saldo">$ 0</p>
+
+          <h3 class="subtitulo">Historial de movimientos</h3>
+          <ul class="lista-movimientos" id="lista-movimientos">
+            <!-- Se arma desde app.js -->
+          </ul>
+
+          <p class="aviso-vacio" id="aviso-sin-movimientos" hidden>
+            Este cliente todavía no tiene movimientos.
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <p class="mensaje-error-importar" id="mensaje-error-importar" hidden></p>
+
+  <script src="app.js"></script>
+</body>
+</html>

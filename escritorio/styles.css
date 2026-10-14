@@ -1,0 +1,359 @@
+/* ===========================================
+   Estilos del panel de escritorio.
+   Misma identidad visual que la app del celular
+   (verde/rojo), pero pensado para pantalla ancha.
+   =========================================== */
+
+:root {
+  --color-primario: #1b4332;
+  --color-primario-claro: #2d6a4f;
+  --color-peligro: #d62828;
+  --color-peligro-suave: #ffe5e5;
+  --color-texto: #1a1f1c;
+  --color-texto-secundario: #6b7280;
+  --color-fondo: #f4f4f4;
+  --color-borde: #e7e9e5;
+  --color-superficie: #ffffff;
+
+  --radio-chico: 10px;
+  --radio-mediano: 14px;
+  --radio-grande: 18px;
+  --sombra-tarjeta: 0 1px 2px rgba(16, 24, 20, 0.04), 0 3px 10px rgba(16, 24, 20, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+}
+
+/* --- Barra superior --- */
+.barra-superior {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  background-color: var(--color-superficie);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icono-marca {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radio-chico);
+}
+
+.nombre-app {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-primario);
+}
+
+.subtitulo-app {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-texto-secundario);
+}
+
+.acciones-barra {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fecha-importacion {
+  font-size: 13px;
+  color: var(--color-texto-secundario);
+  margin: 0;
+}
+
+.boton-principal,
+.boton-secundario {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radio-chico);
+  cursor: pointer;
+}
+
+.boton-principal {
+  background-color: var(--color-primario);
+  color: white;
+  border: none;
+}
+
+.boton-principal:hover {
+  background-color: var(--color-primario-claro);
+}
+
+.boton-secundario {
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  border: 1px solid var(--color-borde);
+}
+
+.boton-secundario:hover {
+  background-color: var(--color-fondo);
+}
+
+/* --- Pantalla vacía (sin backup importado todavía) --- */
+.pantalla-vacia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 73px);
+  padding: 24px;
+}
+
+.pantalla-vacia[hidden] {
+  display: none;
+}
+
+.tarjeta-vacia {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 40px;
+  max-width: 440px;
+  text-align: center;
+}
+
+.icono-vacio {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 16px;
+  border-radius: var(--radio-chico);
+}
+
+.tarjeta-vacia h2 {
+  margin: 0 0 12px;
+  font-size: 19px;
+}
+
+.tarjeta-vacia .texto-ayuda {
+  margin-bottom: 24px;
+}
+
+/* --- Contenido principal --- */
+.contenido[hidden] {
+  display: none;
+}
+
+.encabezado-total {
+  text-align: center;
+  padding: 28px 24px 8px;
+}
+
+.etiqueta-total {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-texto-secundario);
+}
+
+.monto-total {
+  margin: 4px 0 0;
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--color-primario);
+}
+
+.texto-ayuda {
+  font-size: 14px;
+  color: var(--color-texto-secundario);
+  line-height: 1.5;
+}
+
+/* --- Panel de dos columnas --- */
+.panel-doble {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 24px 40px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .panel-doble {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Columna de lista --- */
+.buscador input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 15px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
+  background-color: var(--color-superficie);
+  margin-bottom: 14px;
+}
+
+.lista-clientes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item-cliente {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-mediano);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.item-cliente:hover {
+  border-color: var(--color-primario-claro);
+}
+
+.item-cliente.seleccionado {
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 2px var(--color-primario);
+}
+
+.item-cliente.atrasado {
+  border-left: 4px solid var(--color-peligro);
+}
+
+.nombre-cliente {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.saldo-cliente {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.item-cliente.atrasado .saldo-cliente {
+  color: var(--color-peligro);
+}
+
+.aviso-vacio {
+  text-align: center;
+  color: var(--color-texto-secundario);
+  font-size: 14px;
+  padding: 20px 0;
+}
+
+/* --- Columna de ficha --- */
+.columna-ficha {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 28px;
+  min-height: 320px;
+}
+
+.ficha-vacia[hidden],
+.ficha-cliente[hidden] {
+  display: none;
+}
+
+.nombre-ficha {
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+.telefono-ficha,
+.nota-ficha {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--color-texto-secundario);
+}
+
+.ficha-cliente .etiqueta-total {
+  margin-top: 18px;
+}
+
+.ficha-cliente .monto-total {
+  font-size: 28px;
+  text-align: left;
+}
+
+.subtitulo {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 24px 0 10px;
+}
+
+.lista-movimientos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item-movimiento {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-borde);
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+.item-movimiento:last-child {
+  border-bottom: none;
+}
+
+.detalle-movimiento {
+  display: block;
+  font-weight: 600;
+}
+
+.fecha-movimiento {
+  display: block;
+  font-size: 12px;
+  color: var(--color-texto-secundario);
+}
+
+.item-movimiento.fiado .monto-movimiento {
+  color: var(--color-peligro);
+  font-weight: 700;
+}
+
+.item-movimiento.pago .monto-movimiento {
+  color: var(--color-primario-claro);
+  font-weight: 700;
+}
+
+/* --- Mensaje de error al importar un archivo inválido --- */
+.mensaje-error-importar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-peligro-suave);
+  color: var(--color-peligro);
+  border: 1px solid var(--color-peligro);
+  border-radius: var(--radio-chico);
+  padding: 12px 20px;
+  font-size: 14px;
+  max-width: 480px;
+  text-align: center;
+}
+
+.mensaje-error-importar[hidden] {
+  display: none;
+}
