@@ -6,7 +6,7 @@
 
 // Si cambiás archivos y querés que los celulares bajen la versión
 // nueva, subí este número (ej: "fiado-v2").
-const NOMBRE_CACHE = "fiado-v8";
+const NOMBRE_CACHE = "fiado-v14";
 
 const ARCHIVOS_APP = [
   "./",
@@ -15,6 +15,9 @@ const ARCHIVOS_APP = [
   "./app.js",
   "./manifest.json",
   "./icons/icon.svg",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/icon-180-apple.png",
 ];
 
 // Al instalar el service worker, guardamos todos los archivos de la app

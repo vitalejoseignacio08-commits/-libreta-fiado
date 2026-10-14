@@ -5,6 +5,13 @@
 
 const CLAVE_STORAGE = "libreta-fiado-datos";
 const CLAVE_ACTIVACION = "libreta-fiado-activado";
+const CLAVE_TEMA = "libreta-fiado-tema";
+const CLAVE_ULTIMO_BACKUP = "libreta-fiado-ultimo-backup";
+const CLAVE_BIENVENIDA_VISTA = "libreta-fiado-bienvenida-vista";
+
+// Si pasaron más de estos días sin exportar una copia de seguridad,
+// se lo recordamos al dueño del negocio en la pantalla de Inicio.
+const DIAS_PARA_AVISAR_BACKUP = 7;
 
 // Código numérico único para activar la app. Es el mismo para todos
 // los negocios a los que se la vendas (no hace falta uno por cliente).
@@ -20,6 +27,7 @@ let clienteActualId = null;
 let tipoMovimientoActual = null; // "fiado" o "pago"
 let clienteEditandoId = null; // si no es null, el form de cliente está editando (no creando)
 let movimientoEditandoId = null; // si no es null, el form de movimiento está editando (no creando)
+let pantallaOrigenMovimiento = "pantalla-ficha-cliente"; // a dónde volver al guardar/cancelar un movimiento
 
 /* -------------------------------------------
    Datos de ejemplo para la demo
@@ -146,6 +154,67 @@ function activarApp() {
 }
 
 /* -------------------------------------------
+   Pantalla de bienvenida: se muestra una sola
+   vez, la primera vez que se activa la app
+   ------------------------------------------- */
+function bienvenidaVista() {
+  try {
+    return localStorage.getItem(CLAVE_BIENVENIDA_VISTA) === "true";
+  } catch (error) {
+    console.error("Error al leer si se vio la bienvenida:", error);
+    return true; // si falla, no molestamos con la bienvenida de nuevo
+  }
+}
+
+function marcarBienvenidaVista() {
+  try {
+    localStorage.setItem(CLAVE_BIENVENIDA_VISTA, "true");
+  } catch (error) {
+    console.error("Error al guardar que se vio la bienvenida:", error);
+  }
+}
+
+// Después de activar (o al abrir la app ya activada), decide si toca
+// mostrar la bienvenida o ir directo a Inicio
+function irAInicioOBienvenida() {
+  if (!bienvenidaVista()) {
+    mostrarPantalla("pantalla-bienvenida");
+  } else {
+    renderizarInicio();
+    mostrarPantalla("pantalla-inicio");
+  }
+}
+
+/* -------------------------------------------
+   Modo oscuro (se guarda aparte, es una
+   preferencia del dispositivo, no un dato del negocio)
+   ------------------------------------------- */
+function obtenerTema() {
+  try {
+    return localStorage.getItem(CLAVE_TEMA) === "oscuro" ? "oscuro" : "claro";
+  } catch (error) {
+    console.error("Error al leer el tema guardado:", error);
+    return "claro";
+  }
+}
+
+function aplicarTema(tema) {
+  if (tema === "oscuro") {
+    document.documentElement.setAttribute("data-theme", "oscuro");
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+}
+
+function guardarTema(tema) {
+  try {
+    localStorage.setItem(CLAVE_TEMA, tema);
+  } catch (error) {
+    console.error("Error al guardar el tema:", error);
+  }
+}
+
+/* -------------------------------------------
    Cálculos sobre un cliente
    ------------------------------------------- */
 
@@ -204,6 +273,15 @@ function formatearMonto(numero) {
    ------------------------------------------- */
 function formatearFecha(fechaISO) {
   const [anio, mes, dia] = fechaISO.split("-");
+  return `${dia}/${mes}/${anio}`;
+}
+
+// Igual que formatearFecha, pero a partir de un objeto Date
+// (lo usa fechaUltimoPago, que ya devuelve un Date)
+function formatearFechaDesdeDate(fecha) {
+  const dia = String(fecha.getDate()).padStart(2, "0");
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+  const anio = fecha.getFullYear();
   return `${dia}/${mes}/${anio}`;
 }
 
@@ -386,6 +464,32 @@ function exportarResumenLegible() {
 /* -------------------------------------------
    Copia de seguridad: exportar e importar JSON
    ------------------------------------------- */
+
+// Registra cuándo fue la última vez que se exportó un backup,
+// para poder avisar en Inicio si hace mucho que no se hace uno.
+function guardarFechaUltimoBackup() {
+  try {
+    localStorage.setItem(CLAVE_ULTIMO_BACKUP, fechaDeHoyISO());
+  } catch (error) {
+    console.error("Error al guardar la fecha del último backup:", error);
+  }
+}
+
+// Cuántos días pasaron desde el último backup, o null si nunca se hizo uno
+function diasDesdeUltimoBackup() {
+  try {
+    const fechaGuardada = localStorage.getItem(CLAVE_ULTIMO_BACKUP);
+    if (!fechaGuardada) return null;
+
+    const hoy = new Date();
+    const ultimoBackup = new Date(fechaGuardada);
+    return Math.floor((hoy - ultimoBackup) / (1000 * 60 * 60 * 24));
+  } catch (error) {
+    console.error("Error al leer la fecha del último backup:", error);
+    return null;
+  }
+}
+
 function exportarDatos() {
   const datos = leerDatos();
   const contenido = JSON.stringify(datos, null, 2);
@@ -397,6 +501,7 @@ function exportarDatos() {
   enlace.click();
 
   URL.revokeObjectURL(enlace.href);
+  guardarFechaUltimoBackup();
 }
 
 // Chequea que el archivo tenga la forma exacta que espera la app,
@@ -468,6 +573,14 @@ function renderizarInicio(filtro = "") {
   const lista = document.getElementById("lista-clientes");
   const avisoVacio = document.getElementById("aviso-vacio");
   const montoTotal = document.getElementById("monto-total");
+  const avisoBackup = document.getElementById("aviso-backup");
+
+  // Si hay clientes cargados y hace tiempo (o nunca) que no se exporta
+  // un backup, se lo recordamos: es la única copia fuera del celular.
+  const dias = diasDesdeUltimoBackup();
+  const haceFaltaAvisar =
+    datos.clientes.length > 0 && (dias === null || dias >= DIAS_PARA_AVISAR_BACKUP);
+  avisoBackup.hidden = !haceFaltaAvisar;
 
   // Total "en la calle" = suma de todos los saldos
   const totalEnCalle = datos.clientes.reduce(
@@ -497,17 +610,35 @@ function renderizarInicio(filtro = "") {
       const saldo = calcularSaldo(cliente);
       const atrasado = estaAtrasado(cliente);
 
+      const ultimoPago = fechaUltimoPago(cliente);
+      const textoUltimoPago = ultimoPago
+        ? `Último pago: ${formatearFechaDesdeDate(ultimoPago)}`
+        : "Todavía no pagó nada";
+
       const item = document.createElement("li");
       item.className = "item-cliente" + (atrasado ? " atrasado" : "");
       item.style.animationDelay = `${indice * 40}ms`;
       item.innerHTML = `
-        <span class="nombre-cliente">${escaparHtml(cliente.nombre)}</span>
-        <span class="saldo-cliente">${formatearMonto(saldo)}</span>
+        <span class="datos-cliente">
+          <span class="nombre-cliente">${escaparHtml(cliente.nombre)}</span>
+          <span class="fecha-ultimo-pago-cliente">${textoUltimoPago}</span>
+          <span class="saldo-cliente">${formatearMonto(saldo)}</span>
+        </span>
+        <button type="button" class="boton-cobrar-rapido" title="Registrar un pago">
+          + Pago
+        </button>
       `;
       item.addEventListener("click", () => {
         clienteActualId = cliente.id;
         renderizarFicha();
         mostrarPantalla("pantalla-ficha-cliente");
+      });
+      // El botón "+ Pago" va directo a cargar el pago, sin pasar por la
+      // ficha completa. Frena el click para que no abra la ficha también.
+      item.querySelector(".boton-cobrar-rapido").addEventListener("click", (evento) => {
+        evento.stopPropagation();
+        clienteActualId = cliente.id;
+        abrirCargarMovimiento("pago", "pantalla-inicio");
       });
       lista.appendChild(item);
     });
@@ -714,12 +845,18 @@ function eliminarMovimiento(clienteId, movimientoId) {
    Abrir la pantalla de Cargar Movimiento,
    para uno nuevo o para editar uno existente
    ------------------------------------------- */
-function abrirCargarMovimiento(tipo) {
+function abrirCargarMovimiento(tipo, origen = "pantalla-ficha-cliente") {
   tipoMovimientoActual = tipo;
   movimientoEditandoId = null;
+  pantallaOrigenMovimiento = origen;
 
+  // Si se abrió desde Inicio (cobro rápido), aclaramos de qué cliente
+  // es, porque no se ve su ficha en pantalla.
+  const cliente = buscarClientePorId(clienteActualId);
+  const nombreCliente = origen === "pantalla-inicio" && cliente ? ` — ${cliente.nombre}` : "";
   document.getElementById("titulo-cargar-movimiento").textContent =
-    tipo === "fiado" ? "Nuevo fiado" : "Nuevo pago";
+    (tipo === "fiado" ? "Nuevo fiado" : "Nuevo pago") + nombreCliente;
+
   document.getElementById("input-monto").value = "";
   document.getElementById("input-detalle").value = "";
   document.getElementById("input-fecha").value = fechaDeHoyISO();
@@ -733,6 +870,7 @@ function abrirCargarMovimiento(tipo) {
 function abrirEditarMovimiento(movimiento) {
   tipoMovimientoActual = movimiento.tipo;
   movimientoEditandoId = movimiento.id;
+  pantallaOrigenMovimiento = "pantalla-ficha-cliente"; // editar solo se hace desde la ficha
 
   document.getElementById("titulo-cargar-movimiento").textContent =
     movimiento.tipo === "fiado" ? "Editar fiado" : "Editar pago";
@@ -758,13 +896,29 @@ if ("serviceWorker" in navigator) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // --- Modo oscuro: aplicamos el guardado y sincronizamos el interruptor ---
+  aplicarTema(obtenerTema());
+  const checkboxTemaOscuro = document.getElementById("checkbox-tema-oscuro");
+  checkboxTemaOscuro.checked = obtenerTema() === "oscuro";
+  checkboxTemaOscuro.addEventListener("change", () => {
+    const tema = checkboxTemaOscuro.checked ? "oscuro" : "claro";
+    aplicarTema(tema);
+    guardarTema(tema);
+  });
+
   // --- Pantalla de Activación: si no está activada, no deja entrar ---
   if (!estaActivado()) {
     mostrarPantalla("pantalla-activacion");
   } else {
+    irAInicioOBienvenida();
+  }
+
+  // --- Bienvenida: después de leerla, recién ahí se va a Inicio ---
+  document.getElementById("boton-empezar-bienvenida").addEventListener("click", () => {
+    marcarBienvenidaVista();
     renderizarInicio();
     mostrarPantalla("pantalla-inicio");
-  }
+  });
 
   document.getElementById("form-activacion").addEventListener("submit", (evento) => {
     evento.preventDefault();
@@ -777,12 +931,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (codigoIngresado === CODIGO_ACTIVACION) {
       activarApp();
       errorElemento.hidden = true;
-      renderizarInicio();
-      mostrarPantalla("pantalla-inicio");
+      irAInicioOBienvenida();
     } else {
       errorElemento.textContent = "Código incorrecto. Revisá que esté bien escrito.";
       errorElemento.hidden = false;
     }
+  });
+
+  // --- Aviso de backup pendiente: tocarlo exporta la copia al toque ---
+  document.getElementById("aviso-backup").addEventListener("click", () => {
+    exportarDatos();
+    mostrarAlerta("Copia de seguridad descargada. Guardala en un lugar seguro (Drive, email, etc).");
+    renderizarInicio(document.getElementById("input-buscar").value);
   });
 
   const inputBuscar = document.getElementById("input-buscar");
@@ -897,17 +1057,28 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("boton-nuevo-fiado").addEventListener("click", () => {
-    abrirCargarMovimiento("fiado");
+    abrirCargarMovimiento("fiado", "pantalla-ficha-cliente");
   });
 
   document.getElementById("boton-nuevo-pago").addEventListener("click", () => {
-    abrirCargarMovimiento("pago");
+    abrirCargarMovimiento("pago", "pantalla-ficha-cliente");
   });
 
-  // --- Cancelar carga de movimiento: volver a la Ficha ---
+  // Vuelve a la Ficha o a Inicio, según desde dónde se abrió el movimiento
+  // (la ficha completa, o el "+ Pago" rápido de la lista de Inicio)
+  function volverDeCargarMovimiento() {
+    if (pantallaOrigenMovimiento === "pantalla-inicio") {
+      renderizarInicio(document.getElementById("input-buscar").value);
+      mostrarPantalla("pantalla-inicio");
+    } else {
+      renderizarFicha();
+      mostrarPantalla("pantalla-ficha-cliente");
+    }
+  }
+
+  // --- Cancelar carga de movimiento ---
   document.getElementById("boton-cancelar-movimiento").addEventListener("click", () => {
-    renderizarFicha();
-    mostrarPantalla("pantalla-ficha-cliente");
+    volverDeCargarMovimiento();
   });
 
   // --- Guardar el movimiento (fiado o pago) ---
@@ -945,8 +1116,7 @@ document.addEventListener("DOMContentLoaded", () => {
       agregarMovimiento(clienteActualId, tipoMovimientoActual, monto, detalle, fecha);
     }
 
-    renderizarFicha();
-    mostrarPantalla("pantalla-ficha-cliente");
+    volverDeCargarMovimiento();
   });
 
   // --- Eliminar movimiento (solo visible cuando se está editando uno) ---
@@ -955,8 +1125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!confirmar) return;
 
     eliminarMovimiento(clienteActualId, movimientoEditandoId);
-    renderizarFicha();
-    mostrarPantalla("pantalla-ficha-cliente");
+    volverDeCargarMovimiento();
   });
 
   // --- Ir a Ajustes y volver ---

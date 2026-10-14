@@ -7,7 +7,25 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180-apple.png">
   <meta name="theme-color" content="#1b4332">
+
+  <!-- Para que al "Agregar a inicio" desde iPhone abra como app, sin
+       la barra de Safari, y con un título corto debajo del ícono -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cuentas Claras">
+  <script>
+    // Aplicamos el tema guardado ANTES de pintar la página, para que
+    // no se vea un flash del tema claro si el usuario eligió el oscuro.
+    try {
+      if (localStorage.getItem("libreta-fiado-tema") === "oscuro") {
+        document.documentElement.setAttribute("data-theme", "oscuro");
+      }
+    } catch (error) {
+      // Si localStorage no está disponible, sigue en tema claro (por defecto)
+    }
+  </script>
 </head>
 <body>
 
@@ -42,6 +60,34 @@
 
   </main>
 
+  <!-- Pantalla de Bienvenida (se muestra una sola vez, después de activar) -->
+  <main class="pantalla pantalla-activacion" id="pantalla-bienvenida" hidden>
+
+    <div class="tarjeta-activacion">
+      <div class="logo-activacion">
+        <img src="icons/icon.svg" alt="" class="icono-logo-activacion">
+        <p class="nombre-app-activacion">¡Bienvenido!</p>
+      </div>
+
+      <p class="texto-ayuda texto-centrado">
+        Así se usa Cuentas Claras:
+      </p>
+
+      <ul class="lista-bienvenida">
+        <li><strong>Tocá un cliente</strong> en la lista para ver su cuenta.</li>
+        <li><strong>+ Nuevo cliente</strong> para cargar uno que todavía no tenés.</li>
+        <li><strong>+ Fiado</strong> cuando se lleva algo, <strong>+ Pago</strong> cuando paga.</li>
+        <li><strong>Enviar resumen por WhatsApp</strong> para avisarle cuánto debe.</li>
+        <li>Hacé una <strong>copia de seguridad</strong> seguido, desde Ajustes.</li>
+      </ul>
+
+      <button type="button" class="boton-principal" id="boton-empezar-bienvenida">
+        Entendido, empezar
+      </button>
+    </div>
+
+  </main>
+
   <!-- Pantalla de Inicio -->
   <main class="pantalla" id="pantalla-inicio" hidden>
 
@@ -58,6 +104,10 @@
       <p class="etiqueta-total">Tenés en la calle</p>
       <p class="monto-total" id="monto-total">$ 0</p>
     </header>
+
+    <button type="button" class="aviso-backup" id="aviso-backup" hidden>
+      Hace tiempo que no hacés una copia de seguridad. Tocá acá para hacerla ahora.
+    </button>
 
     <div class="buscador">
       <input
@@ -222,6 +272,17 @@
     </button>
 
     <h2 class="titulo-pantalla">Ajustes</h2>
+
+    <h3 class="subtitulo">Apariencia</h3>
+    <div class="fila-interruptor">
+      <span>Modo oscuro</span>
+      <label class="interruptor">
+        <input type="checkbox" id="checkbox-tema-oscuro">
+        <span class="interruptor-rueda"></span>
+      </label>
+    </div>
+
+    <hr class="separador">
 
     <form id="form-ajustes">
       <label class="etiqueta-campo" for="input-nombre-negocio">Nombre del negocio</label>

@@ -17,6 +17,9 @@
   --color-texto-secundario: #6b7280;
   --color-fondo: #f4f4f4;
   --color-borde: #e7e9e5;
+  --color-superficie: #ffffff;
+  --color-superficie-secundaria: #eef0ed;
+  --color-marca-texto: var(--color-primario-claro);
 
   /* Espaciado y formas */
   --radio-chico: 10px;
@@ -28,6 +31,22 @@
   /* Curvas de animación con más "punch" que las genéricas del navegador */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* --- Modo oscuro (se activa poniendo data-theme="oscuro" en <html>) --- */
+:root[data-theme="oscuro"] {
+  --color-texto: #ececec;
+  --color-texto-secundario: #9aa3a8;
+  --color-fondo: #14171a;
+  --color-borde: #2c3135;
+  --color-superficie: #1f2327;
+  --color-superficie-secundaria: #262b30;
+  --color-peligro-suave: #3a2420;
+  --color-marca-texto: #74c69d;
+}
+
+body {
+  transition: background-color 180ms var(--ease-out), color 180ms var(--ease-out);
 }
 
 * {
@@ -118,6 +137,22 @@ body {
 }
 
 /* --- Buscador --- */
+.aviso-backup {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.4;
+  color: var(--color-peligro);
+  background-color: var(--color-peligro-suave);
+  border: 1px solid var(--color-peligro);
+  border-radius: var(--radio-chico);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+
 .buscador {
   margin-bottom: 16px;
 }
@@ -128,7 +163,8 @@ body {
   font-size: 17px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-chico);
-  background-color: white;
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
   transition: border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
 }
 
@@ -151,7 +187,7 @@ textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: white;
+  background-color: var(--color-superficie);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-mediano);
   padding: 15px 16px;
@@ -168,15 +204,47 @@ textarea:focus {
   box-shadow: var(--sombra-tarjeta);
 }
 
+.datos-cliente {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .item-cliente .nombre-cliente {
   font-weight: 600;
   font-size: 16px;
   color: var(--color-texto);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-cliente .saldo-cliente {
   font-weight: 700;
   font-size: 17px;
+}
+
+.fecha-ultimo-pago-cliente {
+  font-size: 13px;
+  color: var(--color-texto-secundario);
+}
+
+.boton-cobrar-rapido {
+  flex-shrink: 0;
+  margin-left: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primario);
+  background-color: var(--color-superficie-secundaria);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
+  cursor: pointer;
+}
+
+.boton-cobrar-rapido:active {
+  transform: scale(0.95);
 }
 
 /* Aviso visual: hace más de 15 días que no paga */
@@ -185,6 +253,10 @@ textarea:focus {
 }
 
 .item-cliente.atrasado .saldo-cliente {
+  color: var(--color-peligro);
+}
+
+.item-cliente.atrasado .fecha-ultimo-pago-cliente {
   color: var(--color-peligro);
 }
 
@@ -246,7 +318,8 @@ textarea:focus {
   font-size: 17px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-chico);
-  background-color: white;
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
   transition: border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
 }
 
@@ -272,13 +345,13 @@ textarea:focus {
 }
 
 .boton-secundario {
-  background-color: white;
+  background-color: var(--color-superficie);
   color: var(--color-texto);
   border: 1px solid var(--color-borde);
 }
 
 .boton-secundario:active {
-  background-color: #eef0ed;
+  background-color: var(--color-superficie-secundaria);
 }
 
 .mensaje-error {
@@ -303,7 +376,7 @@ textarea:focus {
   background: none;
   border: none;
   font-size: 16px;
-  color: var(--color-primario-claro);
+  color: var(--color-marca-texto);
   font-weight: 600;
   padding: 8px 0;
   margin-bottom: 8px;
@@ -343,7 +416,7 @@ textarea:focus {
   border: none;
   border-radius: var(--radio-mediano);
   margin-top: 12px;
-  background-color: white;
+  background-color: var(--color-superficie);
   color: var(--color-peligro);
   border: 2px solid var(--color-peligro);
 }
@@ -375,7 +448,8 @@ textarea:focus {
 }
 
 .modal {
-  background-color: white;
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
   border-radius: var(--radio-grande);
   padding: 24px;
   max-width: 360px;
@@ -479,7 +553,7 @@ textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: white;
+  background-color: var(--color-superficie);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-mediano);
   padding: 13px 16px;
@@ -513,7 +587,7 @@ textarea:focus {
 }
 
 .item-movimiento.pago .monto-movimiento {
-  color: var(--color-primario-claro);
+  color: var(--color-marca-texto);
 }
 
 .boton-whatsapp {
@@ -572,6 +646,59 @@ textarea:focus {
   margin-top: 12px;
 }
 
+/* --- Interruptor (modo oscuro) --- */
+.fila-interruptor {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+.interruptor {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.interruptor input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.interruptor-rueda {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-borde);
+  border-radius: 30px;
+  cursor: pointer;
+  transition: background-color 160ms var(--ease-out);
+}
+
+.interruptor-rueda::before {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 160ms var(--ease-out);
+}
+
+.interruptor input:checked + .interruptor-rueda {
+  background-color: var(--color-primario-claro);
+}
+
+.interruptor input:checked + .interruptor-rueda::before {
+  transform: translateX(20px);
+}
+
 /* --- Pantalla de Activación --- */
 .pantalla-activacion[hidden] {
   display: none;
@@ -585,7 +712,7 @@ textarea:focus {
 }
 
 .tarjeta-activacion {
-  background-color: white;
+  background-color: var(--color-superficie);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-grande);
   box-shadow: var(--sombra-tarjeta);
@@ -613,8 +740,25 @@ textarea:focus {
   margin: 0;
   font-size: 20px;
   font-weight: 800;
-  color: var(--color-primario);
+  color: var(--color-marca-texto);
   letter-spacing: -0.01em;
+}
+
+.lista-bienvenida {
+  margin: 0 0 20px;
+  padding: 0 0 0 20px;
+  text-align: left;
+}
+
+.lista-bienvenida li {
+  font-size: 15px;
+  color: var(--color-texto-secundario);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.lista-bienvenida strong {
+  color: var(--color-texto);
 }
 
 .texto-centrado {
