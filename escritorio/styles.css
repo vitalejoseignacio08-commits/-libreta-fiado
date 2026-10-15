@@ -255,6 +255,12 @@ body {
   }
 }
 
+.boton-ancho {
+  display: block;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
 /* --- Columna de lista --- */
 .buscador input {
   width: 100%;
@@ -333,6 +339,13 @@ body {
   display: none;
 }
 
+.cabecera-ficha {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
 .nombre-ficha {
   margin: 0 0 4px;
   font-size: 22px;
@@ -343,6 +356,36 @@ body {
   margin: 0 0 4px;
   font-size: 14px;
   color: var(--color-texto-secundario);
+}
+
+.botones-movimiento {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0 4px;
+}
+
+.boton-fiado,
+.boton-pago {
+  flex: 1;
+  padding: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radio-chico);
+  cursor: pointer;
+  color: white;
+}
+
+.boton-fiado {
+  background-color: var(--color-peligro);
+}
+
+.boton-pago {
+  background-color: var(--color-primario-claro);
+}
+
+.item-movimiento {
+  cursor: pointer;
 }
 
 .ficha-cliente .etiqueta-total {
@@ -476,6 +519,87 @@ body {
   background-color: var(--color-primario-claro);
 }
 
+/* --- Modales: nuevo/editar cliente, nuevo/editar movimiento, ajustes --- */
+.overlay-modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.overlay-modal[hidden] {
+  display: none;
+}
+
+.modal-formulario {
+  background-color: var(--color-superficie);
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra-tarjeta);
+  padding: 28px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.modal-formulario h3 {
+  margin: 0 0 18px;
+  font-size: 19px;
+}
+
+.etiqueta-campo {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-texto-secundario);
+  margin: 14px 0 6px;
+}
+
+.modal-formulario input {
+  width: 100%;
+  padding: 11px 12px;
+  font-size: 15px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+}
+
+.modal-formulario input:focus {
+  outline: none;
+  border-color: var(--color-primario-claro);
+}
+
+.mensaje-error {
+  color: var(--color-peligro);
+  font-size: 13px;
+  margin: 10px 0 0;
+}
+
+.mensaje-error[hidden] {
+  display: none;
+}
+
+.botones-modal {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.botones-modal button {
+  flex: 1;
+}
+
+.modal-formulario .boton-peligro-texto {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 14px;
+  padding: 10px;
+}
+
 /* --- Impresión: ocultamos la pantalla normal y mostramos
    solo el resumen armado especialmente para imprimir --- */
 .area-impresion {
@@ -487,7 +611,8 @@ body {
   .pantalla-vacia,
   .contenido,
   .pantalla-graficos,
-  .mensaje-error-importar {
+  .mensaje-error-importar,
+  .overlay-modal {
     display: none !important;
   }
 

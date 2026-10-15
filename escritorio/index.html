@@ -21,6 +21,9 @@
 
     <div class="acciones-barra">
       <p class="fecha-importacion" id="fecha-importacion" hidden></p>
+      <button type="button" class="boton-secundario" id="boton-ajustes-negocio" hidden>
+        Ajustes
+      </button>
       <button type="button" class="boton-secundario" id="boton-ver-graficos" hidden>
         Ver gráficos
       </button>
@@ -52,6 +55,9 @@
       </p>
       <button type="button" class="boton-principal" id="boton-importar-vacio">
         Importar copia de seguridad
+      </button>
+      <button type="button" class="boton-secundario boton-demo-vacio" id="boton-empezar-vacio">
+        Empezar desde cero en esta compu
       </button>
       <button type="button" class="boton-secundario boton-demo-vacio" id="boton-demo-vacio">
         Ver con datos de ejemplo
@@ -90,6 +96,10 @@
           <input type="text" id="input-buscar" placeholder="Buscar cliente..." autocomplete="off">
         </div>
 
+        <button type="button" class="boton-principal boton-ancho" id="boton-nuevo-cliente">
+          + Nuevo cliente
+        </button>
+
         <ul class="lista-clientes" id="lista-clientes">
           <!-- Se arma desde app.js -->
         </ul>
@@ -106,12 +116,24 @@
         </div>
 
         <div class="ficha-cliente" id="ficha-cliente" hidden>
-          <h2 class="nombre-ficha" id="ficha-nombre"></h2>
-          <p class="telefono-ficha" id="ficha-telefono"></p>
-          <p class="nota-ficha" id="ficha-nota"></p>
+          <div class="cabecera-ficha">
+            <div>
+              <h2 class="nombre-ficha" id="ficha-nombre"></h2>
+              <p class="telefono-ficha" id="ficha-telefono"></p>
+              <p class="nota-ficha" id="ficha-nota"></p>
+            </div>
+            <button type="button" class="boton-secundario" id="boton-editar-cliente">
+              Editar
+            </button>
+          </div>
 
           <p class="etiqueta-total">Saldo actual</p>
           <p class="monto-total" id="ficha-saldo">$ 0</p>
+
+          <div class="botones-movimiento">
+            <button type="button" class="boton-fiado" id="boton-nuevo-fiado">+ Fiado</button>
+            <button type="button" class="boton-pago" id="boton-nuevo-pago">+ Pago</button>
+          </div>
 
           <h3 class="subtitulo">Historial de movimientos</h3>
           <ul class="lista-movimientos" id="lista-movimientos">
@@ -157,6 +179,77 @@
   </main>
 
   <p class="mensaje-error-importar" id="mensaje-error-importar" hidden></p>
+
+  <!-- Modal: nuevo cliente / editar cliente -->
+  <div class="overlay-modal" id="overlay-modal-cliente" hidden>
+    <div class="modal-formulario">
+      <h3 id="titulo-modal-cliente">Nuevo cliente</h3>
+      <form id="form-cliente">
+        <label class="etiqueta-campo" for="input-cliente-nombre">Nombre</label>
+        <input type="text" id="input-cliente-nombre" autocomplete="off">
+
+        <label class="etiqueta-campo" for="input-cliente-telefono">Teléfono</label>
+        <input type="tel" id="input-cliente-telefono" placeholder="Ej: 11 2233 4455" autocomplete="off">
+
+        <label class="etiqueta-campo" for="input-cliente-nota">Nota (opcional)</label>
+        <input type="text" id="input-cliente-nota" autocomplete="off">
+
+        <p class="mensaje-error" id="error-cliente" hidden></p>
+
+        <div class="botones-modal">
+          <button type="button" class="boton-secundario" id="boton-cancelar-cliente">Cancelar</button>
+          <button type="submit" class="boton-principal">Guardar</button>
+        </div>
+        <button type="button" class="boton-peligro-texto" id="boton-eliminar-cliente-modal" hidden>
+          Eliminar cliente
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: nuevo movimiento / editar movimiento (fiado o pago) -->
+  <div class="overlay-modal" id="overlay-modal-movimiento" hidden>
+    <div class="modal-formulario">
+      <h3 id="titulo-modal-movimiento">Nuevo fiado</h3>
+      <form id="form-movimiento">
+        <label class="etiqueta-campo" for="input-movimiento-monto">Monto</label>
+        <input type="number" id="input-movimiento-monto" inputmode="numeric" placeholder="0" autocomplete="off">
+
+        <label class="etiqueta-campo" for="input-movimiento-detalle">Detalle (opcional)</label>
+        <input type="text" id="input-movimiento-detalle" autocomplete="off">
+
+        <label class="etiqueta-campo" for="input-movimiento-fecha">Fecha</label>
+        <input type="date" id="input-movimiento-fecha">
+
+        <p class="mensaje-error" id="error-movimiento" hidden></p>
+
+        <div class="botones-modal">
+          <button type="button" class="boton-secundario" id="boton-cancelar-movimiento">Cancelar</button>
+          <button type="submit" class="boton-principal">Guardar</button>
+        </div>
+        <button type="button" class="boton-peligro-texto" id="boton-eliminar-movimiento-modal" hidden>
+          Eliminar movimiento
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: ajustes (nombre del negocio) -->
+  <div class="overlay-modal" id="overlay-modal-ajustes" hidden>
+    <div class="modal-formulario">
+      <h3>Ajustes</h3>
+      <form id="form-ajustes-negocio">
+        <label class="etiqueta-campo" for="input-nombre-negocio">Nombre del negocio</label>
+        <input type="text" id="input-nombre-negocio" placeholder="Ej: Forrajería San José" autocomplete="off">
+        <p class="texto-ayuda">Aparece en los resúmenes impresos y en el encabezado.</p>
+
+        <div class="botones-modal">
+          <button type="button" class="boton-secundario" id="boton-cancelar-ajustes">Cancelar</button>
+          <button type="submit" class="boton-principal">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Solo se ve al imprimir (ver @media print en styles.css); se
        completa desde app.js justo antes de llamar a window.print() -->
