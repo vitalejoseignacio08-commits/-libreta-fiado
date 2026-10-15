@@ -225,11 +225,20 @@ function calcularSaldo(cliente) {
   }, 0);
 }
 
+// Convierte una fecha guardada como "aaaa-mm-dd" a un Date en el huso
+// horario local (a medianoche). OJO: "new Date('aaaa-mm-dd')" directo
+// la interpreta en UTC, y en Argentina (UTC-3) eso puede mostrar el
+// día anterior al correcto. Por eso armamos el Date a mano.
+function fechaISOaDate(fechaISO) {
+  const [anio, mes, dia] = fechaISO.split("-").map(Number);
+  return new Date(anio, mes - 1, dia);
+}
+
 // Fecha del último pago (o null si nunca pagó)
 function fechaUltimoPago(cliente) {
   const pagos = cliente.movimientos.filter((m) => m.tipo === "pago");
   if (pagos.length === 0) return null;
-  const fechas = pagos.map((p) => new Date(p.fecha));
+  const fechas = pagos.map((p) => fechaISOaDate(p.fecha));
   return new Date(Math.max(...fechas));
 }
 
@@ -237,7 +246,8 @@ function fechaUltimoPago(cliente) {
 function estaAtrasado(cliente) {
   const ultimoPago = fechaUltimoPago(cliente);
   // Si nunca pagó, usamos la fecha del primer fiado como referencia
-  const fechaReferencia = ultimoPago || new Date(cliente.movimientos[0]?.fecha);
+  const primerFiado = cliente.movimientos[0]?.fecha;
+  const fechaReferencia = ultimoPago || (primerFiado && fechaISOaDate(primerFiado));
   if (!fechaReferencia || isNaN(fechaReferencia)) return false;
 
   const hoy = new Date();
@@ -482,7 +492,7 @@ function diasDesdeUltimoBackup() {
     if (!fechaGuardada) return null;
 
     const hoy = new Date();
-    const ultimoBackup = new Date(fechaGuardada);
+    const ultimoBackup = fechaISOaDate(fechaGuardada);
     return Math.floor((hoy - ultimoBackup) / (1000 * 60 * 60 * 24));
   } catch (error) {
     console.error("Error al leer la fecha del último backup:", error);

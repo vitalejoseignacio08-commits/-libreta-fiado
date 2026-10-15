@@ -21,8 +21,20 @@
 
     <div class="acciones-barra">
       <p class="fecha-importacion" id="fecha-importacion" hidden></p>
+      <button type="button" class="boton-secundario" id="boton-ver-graficos" hidden>
+        Ver gráficos
+      </button>
+      <button type="button" class="boton-secundario" id="boton-exportar-csv" hidden>
+        Exportar a Excel
+      </button>
+      <button type="button" class="boton-secundario" id="boton-imprimir" hidden>
+        Imprimir
+      </button>
       <button type="button" class="boton-secundario" id="boton-importar">
         Importar copia de seguridad
+      </button>
+      <button type="button" class="boton-peligro-texto" id="boton-olvidar-datos" hidden>
+        Olvidar datos de esta compu
       </button>
       <input type="file" id="input-importar-archivo" accept="application/json" hidden>
     </div>
@@ -41,6 +53,9 @@
       <button type="button" class="boton-principal" id="boton-importar-vacio">
         Importar copia de seguridad
       </button>
+      <button type="button" class="boton-secundario boton-demo-vacio" id="boton-demo-vacio">
+        Ver con datos de ejemplo
+      </button>
     </div>
   </main>
 
@@ -51,6 +66,21 @@
       <p class="etiqueta-total">Tenés en la calle</p>
       <p class="monto-total" id="monto-total">$ 0</p>
     </header>
+
+    <div class="fila-tarjetas">
+      <div class="tarjeta-resumen">
+        <p class="numero-tarjeta" id="resumen-total-clientes">0</p>
+        <p class="etiqueta-tarjeta">Clientes</p>
+      </div>
+      <div class="tarjeta-resumen">
+        <p class="numero-tarjeta" id="resumen-con-deuda">0</p>
+        <p class="etiqueta-tarjeta">Con saldo pendiente</p>
+      </div>
+      <div class="tarjeta-resumen tarjeta-resumen-alerta">
+        <p class="numero-tarjeta" id="resumen-atrasados">0</p>
+        <p class="etiqueta-tarjeta">Atrasados (+15 días)</p>
+      </div>
+    </div>
 
     <div class="panel-doble">
 
@@ -97,7 +127,57 @@
     </div>
   </main>
 
+  <!-- Pantalla de gráficos -->
+  <main class="pantalla-graficos" id="pantalla-graficos" hidden>
+    <div class="cabecera-graficos">
+      <button type="button" class="boton-secundario" id="boton-volver-graficos">
+        &larr; Volver a la lista
+      </button>
+    </div>
+
+    <div class="tarjeta-grafico">
+      <h3 class="subtitulo">Clientes con más deuda</h3>
+      <p class="texto-ayuda" id="aviso-sin-datos-ranking" hidden>
+        No hay clientes con saldo pendiente para graficar.
+      </p>
+      <canvas id="grafico-ranking" width="900" height="320"></canvas>
+    </div>
+
+    <div class="tarjeta-grafico">
+      <h3 class="subtitulo">Fiado y pagos por mes (últimos 6 meses)</h3>
+      <p class="texto-ayuda" id="aviso-sin-datos-mensual" hidden>
+        Todavía no hay movimientos para graficar.
+      </p>
+      <canvas id="grafico-mensual" width="900" height="320"></canvas>
+      <div class="leyenda-grafico">
+        <span class="leyenda-item"><span class="punto-leyenda punto-fiado"></span> Fiado</span>
+        <span class="leyenda-item"><span class="punto-leyenda punto-pago"></span> Pagos</span>
+      </div>
+    </div>
+  </main>
+
   <p class="mensaje-error-importar" id="mensaje-error-importar" hidden></p>
+
+  <!-- Solo se ve al imprimir (ver @media print en styles.css); se
+       completa desde app.js justo antes de llamar a window.print() -->
+  <section class="area-impresion" id="area-impresion">
+    <h1 id="impresion-nombre-negocio"></h1>
+    <p class="fecha-resumen" id="impresion-fecha"></p>
+    <p><strong>Total en la calle: </strong><span id="impresion-total"></span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Teléfono</th>
+          <th>Último pago</th>
+          <th>Debe</th>
+        </tr>
+      </thead>
+      <tbody id="impresion-cuerpo-tabla">
+        <!-- Se arma desde app.js -->
+      </tbody>
+    </table>
+  </section>
 
   <script src="app.js"></script>
 </body>
