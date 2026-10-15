@@ -554,8 +554,13 @@ function escaparHtml(texto) {
    Alta, edición y borrado de clientes y
    movimientos (fiado o pago)
    ------------------------------------------- */
-function agregarCliente(nombre, telefono, nota) {
-  const datos = leerDatosGuardados() || datosVacios();
+// Todas estas funciones devuelven los datos actualizados si se
+// guardaron bien, o null si falló el guardado (guardarDatos ya le
+// avisó al usuario). Quien las llama SIEMPRE debe chequear el
+// resultado antes de cerrar el modal o cambiar de pantalla: si no,
+// el modal se cierra como si todo hubiera salido bien aunque el
+// cambio se haya perdido.
+function agregarCliente(datos, nombre, telefono, nota) {
   datos.clientes.push({
     id: generarId(),
     nombre: nombre.trim(),
@@ -563,68 +568,54 @@ function agregarCliente(nombre, telefono, nota) {
     nota: nota.trim(),
     movimientos: [],
   });
-  guardarDatos(datos);
-  return datos;
+  return guardarDatos(datos) ? datos : null;
 }
 
-function editarCliente(id, nombre, telefono, nota) {
-  const datos = leerDatosGuardados();
-  const cliente = datos?.clientes.find((c) => c.id === id);
-  if (!cliente) return datos;
+function editarCliente(datos, id, nombre, telefono, nota) {
+  const cliente = datos.clientes.find((c) => c.id === id);
+  if (!cliente) return null;
 
   cliente.nombre = nombre.trim();
   cliente.telefono = telefono.trim();
   cliente.nota = nota.trim();
-  guardarDatos(datos);
-  return datos;
+  return guardarDatos(datos) ? datos : null;
 }
 
-function eliminarCliente(id) {
-  const datos = leerDatosGuardados();
-  if (!datos) return datos;
+function eliminarCliente(datos, id) {
   datos.clientes = datos.clientes.filter((c) => c.id !== id);
-  guardarDatos(datos);
-  return datos;
+  return guardarDatos(datos) ? datos : null;
 }
 
-function agregarMovimiento(clienteId, tipo, monto, detalle, fecha) {
-  const datos = leerDatosGuardados();
-  const cliente = datos?.clientes.find((c) => c.id === clienteId);
-  if (!cliente) return datos;
+function agregarMovimiento(datos, clienteId, tipo, monto, detalle, fecha) {
+  const cliente = datos.clientes.find((c) => c.id === clienteId);
+  if (!cliente) return null;
 
   cliente.movimientos.push({ id: generarId(), tipo, monto, detalle: detalle.trim(), fecha });
-  guardarDatos(datos);
-  return datos;
+  return guardarDatos(datos) ? datos : null;
 }
 
-function editarMovimiento(clienteId, movimientoId, monto, detalle, fecha) {
-  const datos = leerDatosGuardados();
-  const cliente = datos?.clientes.find((c) => c.id === clienteId);
+function editarMovimiento(datos, clienteId, movimientoId, monto, detalle, fecha) {
+  const cliente = datos.clientes.find((c) => c.id === clienteId);
   const movimiento = cliente?.movimientos.find((m) => m.id === movimientoId);
-  if (!movimiento) return datos;
+  if (!movimiento) return null;
 
   movimiento.monto = monto;
   movimiento.detalle = detalle.trim();
   movimiento.fecha = fecha;
-  guardarDatos(datos);
-  return datos;
+  return guardarDatos(datos) ? datos : null;
 }
 
-function eliminarMovimiento(clienteId, movimientoId) {
-  const datos = leerDatosGuardados();
-  const cliente = datos?.clientes.find((c) => c.id === clienteId);
-  if (!cliente) return datos;
+function eliminarMovimiento(datos, clienteId, movimientoId) {
+  const cliente = datos.clientes.find((c) => c.id === clienteId);
+  if (!cliente) return null;
 
   cliente.movimientos = cliente.movimientos.filter((m) => m.id !== movimientoId);
-  guardarDatos(datos);
-  return datos;
+  return guardarDatos(datos) ? datos : null;
 }
 
-function guardarNombreNegocio(nombre) {
-  const datos = leerDatosGuardados() || datosVacios();
+function guardarNombreNegocio(datos, nombre) {
   datos.negocio.nombre = nombre.trim();
-  guardarDatos(datos);
-  return datos;
+  return guardarDatos(datos) ? datos : null;
 }
 
 /* -------------------------------------------
@@ -820,9 +811,9 @@ function abrirModalMovimiento(tipo, movimiento) {
   tipoMovimientoActual = tipo;
   movimientoEditandoId = movimiento ? movimiento.id : null;
 
-  document.getElementById("titulo-modal-movimiento").textContent = movimiento
-    ? (tipo === "fiado" ? "Editar fiado" : "Editar pago")
-    : (tipo === "fiado" ? "Nuevo fiado" : "Nuevo pago");
+  const accion = movimiento ? "Editar" : "Nuevo";
+  const sustantivo = tipo === "fiado" ? "fiado" : "pago";
+  document.getElementById("titulo-modal-movimiento").textContent = `${accion} ${sustantivo}`;
   document.getElementById("input-movimiento-monto").value = movimiento?.monto || "";
   document.getElementById("input-movimiento-detalle").value = movimiento?.detalle || "";
   document.getElementById("input-movimiento-fecha").value = movimiento?.fecha || fechaDeHoyISO();
@@ -975,13 +966,18 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!confirmar) return;
     }
 
+    let resultado;
     if (clienteEditandoId) {
-      editarCliente(clienteEditandoId, nombre, telefono, nota);
-      clienteSeleccionadoId = clienteEditandoId;
+      resultado = editarCliente(datos, clienteEditandoId, nombre, telefono, nota);
+      if (resultado) clienteSeleccionadoId = clienteEditandoId;
     } else {
-      const datosActualizados = agregarCliente(nombre, telefono, nota);
-      clienteSeleccionadoId = datosActualizados.clientes[datosActualizados.clientes.length - 1].id;
+      resultado = agregarCliente(datos, nombre, telefono, nota);
+      if (resultado) clienteSeleccionadoId = resultado.clientes[resultado.clientes.length - 1].id;
     }
+    // Si guardarDatos() falló (ej. almacenamiento lleno o modo privado),
+    // no cerramos el modal: el usuario ya vio el aviso de error y así
+    // no pierde lo que escribió.
+    if (!resultado) return;
 
     cerrarModalCliente();
     renderizarTodo();
@@ -993,7 +989,9 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     if (!confirmar) return;
 
-    eliminarCliente(clienteEditandoId);
+    const datos = leerDatosGuardados();
+    if (!datos || !eliminarCliente(datos, clienteEditandoId)) return;
+
     clienteSeleccionadoId = null;
     cerrarModalCliente();
     renderizarTodo();
@@ -1036,11 +1034,13 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (movimientoEditandoId) {
-      editarMovimiento(clienteSeleccionadoId, movimientoEditandoId, monto, detalle, fecha);
-    } else {
-      agregarMovimiento(clienteSeleccionadoId, tipoMovimientoActual, monto, detalle, fecha);
-    }
+    const datos = leerDatosGuardados();
+    if (!datos) return;
+
+    const resultado = movimientoEditandoId
+      ? editarMovimiento(datos, clienteSeleccionadoId, movimientoEditandoId, monto, detalle, fecha)
+      : agregarMovimiento(datos, clienteSeleccionadoId, tipoMovimientoActual, monto, detalle, fecha);
+    if (!resultado) return;
 
     cerrarModalMovimiento();
     renderizarTodo();
@@ -1050,7 +1050,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmar = window.confirm("¿Seguro que querés eliminar este movimiento?");
     if (!confirmar) return;
 
-    eliminarMovimiento(clienteSeleccionadoId, movimientoEditandoId);
+    const datos = leerDatosGuardados();
+    if (!datos || !eliminarMovimiento(datos, clienteSeleccionadoId, movimientoEditandoId)) return;
+
     cerrarModalMovimiento();
     renderizarTodo();
   });
@@ -1067,7 +1069,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("form-ajustes-negocio").addEventListener("submit", (evento) => {
     evento.preventDefault();
     const nombre = document.getElementById("input-nombre-negocio").value;
-    guardarNombreNegocio(nombre);
+
+    const datos = leerDatosGuardados() || datosVacios();
+    if (!guardarNombreNegocio(datos, nombre)) return;
+
     cerrarModalAjustes();
     renderizarTodo();
   });
