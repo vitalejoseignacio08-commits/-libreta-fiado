@@ -6,12 +6,13 @@
 
 // Si cambiás archivos y querés que los celulares bajen la versión
 // nueva, subí este número (ej: "fiado-v2").
-const NOMBRE_CACHE = "fiado-v15";
+const NOMBRE_CACHE = "fiado-v16";
 
 const ARCHIVOS_APP = [
   "./",
   "./index.html",
   "./styles.css",
+  "./datos.js",
   "./app.js",
   "./manifest.json",
   "./icons/icon.svg",

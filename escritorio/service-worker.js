@@ -8,12 +8,13 @@
 
 // Si cambiás archivos y querés que la compu baje la versión nueva,
 // subí este número (ej: "escritorio-v2").
-const NOMBRE_CACHE = "escritorio-v1";
+const NOMBRE_CACHE = "escritorio-v2";
 
 const ARCHIVOS_APP = [
   "./",
   "./index.html",
   "./styles.css",
+  "../datos.js",
   "./app.js",
   "../icons/icon.svg",
 ];

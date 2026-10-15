@@ -74,44 +74,32 @@ function datosDeEjemplo() {
 
 /* -------------------------------------------
    Guardar y leer datos en localStorage
-   (siempre envuelto en try/catch, como pide
-   el proyecto, por si el celular no permite
-   guardar o el dato está corrupto)
+   (las primitivas de lectura/escritura están en
+   datos.js, compartidas con el panel de escritorio;
+   acá solo queda la política propia del celular:
+   auto-inicializar vacío la primera vez, y avisar
+   con un modal si falla el guardado)
    ------------------------------------------- */
-// Estructura vacía: así arranca un negocio real la primera vez
-function datosVacios() {
-  return {
-    negocio: {
-      nombre: "",
-    },
-    clientes: [],
-  };
-}
-
 function leerDatos() {
-  try {
-    const guardado = localStorage.getItem(CLAVE_STORAGE);
-    if (!guardado) {
-      const vacio = datosVacios();
-      guardarDatos(vacio);
-      return vacio;
-    }
-    return JSON.parse(guardado);
-  } catch (error) {
-    console.error("Error al leer los datos guardados:", error);
+  const resultado = leerJSONDeStorage(CLAVE_STORAGE);
+
+  if (!resultado.ok) {
+    // JSON corrupto: no sobrescribimos nada (se podría recuperar a
+    // mano revisando localStorage), solo mostramos vacío en memoria.
     return datosVacios();
   }
+  if (resultado.datos === null) {
+    const vacio = datosVacios();
+    guardarDatos(vacio);
+    return vacio;
+  }
+  return resultado.datos;
 }
 
 function guardarDatos(datos) {
-  try {
-    localStorage.setItem(CLAVE_STORAGE, JSON.stringify(datos));
-    return true;
-  } catch (error) {
-    console.error("Error al guardar los datos:", error);
-    avisarErrorDeGuardado();
-    return false;
-  }
+  const ok = guardarJSONEnStorage(CLAVE_STORAGE, datos);
+  if (!ok) avisarErrorDeGuardado();
+  return ok;
 }
 
 // Si el navegador bloquea el almacenamiento (modo privado estricto,
@@ -215,118 +203,12 @@ function guardarTema(tema) {
 }
 
 /* -------------------------------------------
-   Cálculos sobre un cliente
+   Cálculos, validaciones y formato de moneda/fecha:
+   ver datos.js (compartido con el escritorio)
    ------------------------------------------- */
-
-// Saldo = total fiado - total pagado
-function calcularSaldo(cliente) {
-  return cliente.movimientos.reduce((saldo, mov) => {
-    return mov.tipo === "fiado" ? saldo + mov.monto : saldo - mov.monto;
-  }, 0);
-}
-
-// Convierte una fecha guardada como "aaaa-mm-dd" a un Date en el huso
-// horario local (a medianoche). OJO: "new Date('aaaa-mm-dd')" directo
-// la interpreta en UTC, y en Argentina (UTC-3) eso puede mostrar el
-// día anterior al correcto. Por eso armamos el Date a mano.
-function fechaISOaDate(fechaISO) {
-  const [anio, mes, dia] = fechaISO.split("-").map(Number);
-  return new Date(anio, mes - 1, dia);
-}
-
-// Fecha del último pago (o null si nunca pagó)
-function fechaUltimoPago(cliente) {
-  const pagos = cliente.movimientos.filter((m) => m.tipo === "pago");
-  if (pagos.length === 0) return null;
-  const fechas = pagos.map((p) => fechaISOaDate(p.fecha));
-  return new Date(Math.max(...fechas));
-}
-
-// ¿Hace más de 15 días que no paga?
-function estaAtrasado(cliente) {
-  const ultimoPago = fechaUltimoPago(cliente);
-  // Si nunca pagó, usamos la fecha del primer fiado como referencia
-  const primerFiado = cliente.movimientos[0]?.fecha;
-  const fechaReferencia = ultimoPago || (primerFiado && fechaISOaDate(primerFiado));
-  if (!fechaReferencia || isNaN(fechaReferencia)) return false;
-
-  const hoy = new Date();
-  const diasSinPagar = (hoy - fechaReferencia) / (1000 * 60 * 60 * 24);
-  return diasSinPagar > 15;
-}
-
-/* -------------------------------------------
-   Validar teléfono argentino: código de área + número,
-   sin el 0 ni el 15, son 10 números en total
-   (ej: 11 2233 4455, o 341 155 1234). El campo es
-   opcional, así que vacío también es válido.
-   ------------------------------------------- */
-function telefonoEsValido(telefono) {
-  const limpio = telefono.replace(/\D/g, "");
-  if (limpio === "") return true;
-  return limpio.length === 10;
-}
-
-/* -------------------------------------------
-   Formato de moneda argentino: $ 12.345
-   ------------------------------------------- */
-function formatearMonto(numero) {
-  const redondeado = Math.round(numero);
-  const conPuntos = redondeado.toLocaleString("es-AR");
-  return `$ ${conPuntos}`;
-}
-
-/* -------------------------------------------
-   Formato de fecha: dd/mm/aaaa
-   (las fechas se guardan como "aaaa-mm-dd",
-   que es el formato que usa <input type="date">)
-   ------------------------------------------- */
-function formatearFecha(fechaISO) {
-  const [anio, mes, dia] = fechaISO.split("-");
-  return `${dia}/${mes}/${anio}`;
-}
-
-// Igual que formatearFecha, pero a partir de un objeto Date
-// (lo usa fechaUltimoPago, que ya devuelve un Date)
-function formatearFechaDesdeDate(fecha) {
-  const dia = String(fecha.getDate()).padStart(2, "0");
-  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-  const anio = fecha.getFullYear();
-  return `${dia}/${mes}/${anio}`;
-}
-
-// Fecha de hoy en formato "aaaa-mm-dd" para precargar el input de fecha
-function fechaDeHoyISO() {
-  const hoy = new Date();
-  const anio = hoy.getFullYear();
-  const mes = String(hoy.getMonth() + 1).padStart(2, "0");
-  const dia = String(hoy.getDate()).padStart(2, "0");
-  return `${anio}-${mes}-${dia}`;
-}
-
 function buscarClientePorId(id) {
   const datos = leerDatos();
   return datos.clientes.find((cliente) => cliente.id === id);
-}
-
-// Busca si ya existe otro cliente con ese nombre (sin distinguir
-// mayúsculas/espacios), para avisar antes de crear un duplicado
-// por error. "excluirId" es para no compararse contra sí mismo al editar.
-function existeClienteConNombre(nombre, excluirId) {
-  const datos = leerDatos();
-  const nombreNormalizado = nombre.trim().toLowerCase();
-
-  return datos.clientes.some(
-    (cliente) => cliente.id !== excluirId && cliente.nombre.trim().toLowerCase() === nombreNormalizado
-  );
-}
-
-// Evita que texto escrito por el usuario (nombre, detalle, nota) rompa
-// la pantalla si alguien pone símbolos como < o & en un campo.
-function escaparHtml(texto) {
-  const div = document.createElement("div");
-  div.textContent = texto;
-  return div.innerHTML;
 }
 
 /* -------------------------------------------
@@ -512,35 +394,6 @@ function exportarDatos() {
 
   URL.revokeObjectURL(enlace.href);
   guardarFechaUltimoBackup();
-}
-
-// Chequea que el archivo tenga la forma exacta que espera la app,
-// campo por campo, para no romper la pantalla con un archivo corrupto
-// o de otra app.
-function estructuraDeDatosEsValida(datos) {
-  if (typeof datos !== "object" || datos === null) return false;
-  if (typeof datos.negocio !== "object" || datos.negocio === null) return false;
-  if (typeof datos.negocio.nombre !== "string") return false;
-  if (!Array.isArray(datos.clientes)) return false;
-
-  return datos.clientes.every((cliente) => {
-    if (typeof cliente !== "object" || cliente === null) return false;
-    if (typeof cliente.id !== "string") return false;
-    if (typeof cliente.nombre !== "string") return false;
-    if (typeof cliente.telefono !== "string") return false;
-    if (typeof cliente.nota !== "string") return false;
-    if (!Array.isArray(cliente.movimientos)) return false;
-
-    return cliente.movimientos.every((mov) => {
-      if (typeof mov !== "object" || mov === null) return false;
-      if (typeof mov.id !== "string") return false;
-      if (mov.tipo !== "fiado" && mov.tipo !== "pago") return false;
-      if (typeof mov.monto !== "number") return false;
-      if (typeof mov.detalle !== "string") return false;
-      if (typeof mov.fecha !== "string") return false;
-      return true;
-    });
-  });
 }
 
 function importarDatos(archivo) {
@@ -771,11 +624,6 @@ function mostrarPantalla(idPantalla) {
 /* -------------------------------------------
    Agregar un cliente nuevo
    ------------------------------------------- */
-function generarId() {
-  // Alcanza con esto para una app que corre en un solo celular
-  return Date.now().toString();
-}
-
 function agregarCliente(nombre, telefono, nota) {
   const datos = leerDatos();
 
@@ -1020,7 +868,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (existeClienteConNombre(nombre, clienteEditandoId)) {
+    if (existeClienteConNombre(leerDatos(), nombre, clienteEditandoId)) {
       const confirmar = await mostrarConfirmacion(
         `Ya existe un cliente llamado "${nombre.trim()}". ¿Querés guardarlo igual?`
       );

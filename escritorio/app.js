@@ -68,42 +68,41 @@ function cargarDatosDeEjemplo() {
 }
 
 /* -------------------------------------------
-   Guardar y leer el último backup importado
-   (así no hace falta reimportar cada vez que
-   se abre el panel)
+   Guardar y leer los datos de esta compu
+   (las primitivas de lectura/escritura están en
+   datos.js, compartidas con la app del celular;
+   acá solo queda la política propia del escritorio:
+   nunca auto-inicializar — se queda en la pantalla
+   vacía hasta que el usuario importe, cree desde
+   cero o pida la demo — y avisar con un toast si
+   falla el guardado)
    ------------------------------------------- */
 function leerDatosGuardados() {
-  try {
-    const guardado = localStorage.getItem(CLAVE_STORAGE);
-    return guardado ? JSON.parse(guardado) : null;
-  } catch (error) {
-    console.error("Error al leer los datos guardados:", error);
-    return null;
-  }
+  const resultado = leerJSONDeStorage(CLAVE_STORAGE);
+  // Tanto si no había nada guardado como si lo que había estaba
+  // corrupto, mostramos la pantalla vacía (no sobrescribimos nada
+  // en el caso de datos corruptos).
+  if (!resultado.ok) return null;
+  return resultado.datos;
 }
 
 // Guarda los datos en esta compu y actualiza la marca de "última
 // actualización" (se usa tanto al importar un backup como al
 // agregar/editar/borrar algo directo en el panel)
 function guardarDatos(datos) {
-  try {
-    localStorage.setItem(CLAVE_STORAGE, JSON.stringify(datos));
-    localStorage.setItem(CLAVE_FECHA_IMPORTACION, new Date().toISOString());
-    return true;
-  } catch (error) {
-    console.error("Error al guardar los datos:", error);
+  const ok = guardarJSONEnStorage(CLAVE_STORAGE, datos);
+  if (!ok) {
     mostrarErrorImportar("No se pudo guardar el cambio en esta compu. Revisá el espacio disponible o si el navegador está en modo privado.");
     return false;
   }
-}
-
-function datosVacios() {
-  return { negocio: { nombre: "" }, clientes: [] };
-}
-
-// Alcanza con esto para una app que corre en una sola compu
-function generarId() {
-  return Date.now().toString();
+  try {
+    localStorage.setItem(CLAVE_FECHA_IMPORTACION, new Date().toISOString());
+  } catch (error) {
+    // No es grave si esto puntual falla: los datos ya se guardaron
+    // bien arriba, solo se pierde la marca de "última actualización".
+    console.error("Error al guardar la fecha de última actualización:", error);
+  }
+  return true;
 }
 
 // Borra los datos guardados en ESTA compu (el backup original del
@@ -124,37 +123,6 @@ function leerFechaImportacion() {
   } catch (error) {
     return null;
   }
-}
-
-/* -------------------------------------------
-   Misma validación que usa la app del celular
-   antes de importar: si el archivo no tiene
-   exactamente esta forma, no lo aceptamos.
-   ------------------------------------------- */
-function estructuraDeDatosEsValida(datos) {
-  if (typeof datos !== "object" || datos === null) return false;
-  if (typeof datos.negocio !== "object" || datos.negocio === null) return false;
-  if (typeof datos.negocio.nombre !== "string") return false;
-  if (!Array.isArray(datos.clientes)) return false;
-
-  return datos.clientes.every((cliente) => {
-    if (typeof cliente !== "object" || cliente === null) return false;
-    if (typeof cliente.id !== "string") return false;
-    if (typeof cliente.nombre !== "string") return false;
-    if (typeof cliente.telefono !== "string") return false;
-    if (typeof cliente.nota !== "string") return false;
-    if (!Array.isArray(cliente.movimientos)) return false;
-
-    return cliente.movimientos.every((mov) => {
-      if (typeof mov !== "object" || mov === null) return false;
-      if (typeof mov.id !== "string") return false;
-      if (mov.tipo !== "fiado" && mov.tipo !== "pago") return false;
-      if (typeof mov.monto !== "number") return false;
-      if (typeof mov.detalle !== "string") return false;
-      if (typeof mov.fecha !== "string") return false;
-      return true;
-    });
-  });
 }
 
 function mostrarErrorImportar(mensaje) {
@@ -206,15 +174,6 @@ function importarArchivo(archivo) {
    ninguna librería extra.
    ------------------------------------------- */
 
-// Fecha de hoy en formato "aaaa-mm-dd", para el nombre del archivo
-function fechaDeHoyISO() {
-  const hoy = new Date();
-  const anio = hoy.getFullYear();
-  const mes = String(hoy.getMonth() + 1).padStart(2, "0");
-  const dia = String(hoy.getDate()).padStart(2, "0");
-  return `${anio}-${mes}-${dia}`;
-}
-
 // Envuelve un valor entre comillas si tiene coma, comillas o salto de
 // línea, como pide el formato CSV. Si no, lo deja tal cual.
 function celdaCsv(valor) {
@@ -245,13 +204,6 @@ function generarCsvClientes(clientes) {
 
   // BOM al inicio: sin esto, Excel en Windows puede mostrar mal las tildes
   return "﻿" + filas.map((fila) => fila.map(celdaCsv).join(",")).join("\r\n");
-}
-
-function formatearFechaDesdeDate(fecha) {
-  const dia = String(fecha.getDate()).padStart(2, "0");
-  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-  const anio = fecha.getFullYear();
-  return `${dia}/${mes}/${anio}`;
 }
 
 // Arma la tabla de impresión con los mismos datos y el mismo orden
@@ -472,51 +424,10 @@ function ocultarPantallaGraficos() {
 }
 
 /* -------------------------------------------
-   Cálculos sobre un cliente (igual que en el celular)
+   Cálculos, validaciones y formato de moneda/fecha:
+   ver datos.js (compartido con la app del celular).
+   Acá solo queda lo propio del escritorio.
    ------------------------------------------- */
-function calcularSaldo(cliente) {
-  return cliente.movimientos.reduce((saldo, mov) => {
-    return mov.tipo === "fiado" ? saldo + mov.monto : saldo - mov.monto;
-  }, 0);
-}
-
-// Convierte una fecha guardada como "aaaa-mm-dd" a un Date en el huso
-// horario local (a medianoche). OJO: "new Date('aaaa-mm-dd')" directo
-// la interpreta en UTC, y en Argentina (UTC-3) eso puede mostrar el
-// día anterior al correcto. Por eso armamos el Date a mano.
-function fechaISOaDate(fechaISO) {
-  const [anio, mes, dia] = fechaISO.split("-").map(Number);
-  return new Date(anio, mes - 1, dia);
-}
-
-function fechaUltimoPago(cliente) {
-  const pagos = cliente.movimientos.filter((m) => m.tipo === "pago");
-  if (pagos.length === 0) return null;
-  const fechas = pagos.map((p) => fechaISOaDate(p.fecha));
-  return new Date(Math.max(...fechas));
-}
-
-function estaAtrasado(cliente) {
-  const ultimoPago = fechaUltimoPago(cliente);
-  const primerFiado = cliente.movimientos[0]?.fecha;
-  const fechaReferencia = ultimoPago || (primerFiado && fechaISOaDate(primerFiado));
-  if (!fechaReferencia || isNaN(fechaReferencia)) return false;
-
-  const hoy = new Date();
-  const diasSinPagar = (hoy - fechaReferencia) / (1000 * 60 * 60 * 24);
-  return diasSinPagar > 15;
-}
-
-function formatearMonto(numero) {
-  const redondeado = Math.round(numero);
-  return `$ ${redondeado.toLocaleString("es-AR")}`;
-}
-
-function formatearFecha(fechaISO) {
-  const [anio, mes, dia] = fechaISO.split("-");
-  return `${dia}/${mes}/${anio}`;
-}
-
 function formatearFechaHora(fechaISOCompleta) {
   const fecha = new Date(fechaISOCompleta);
   const dia = String(fecha.getDate()).padStart(2, "0");
@@ -525,29 +436,6 @@ function formatearFechaHora(fechaISOCompleta) {
   const hora = String(fecha.getHours()).padStart(2, "0");
   const minutos = String(fecha.getMinutes()).padStart(2, "0");
   return `${dia}/${mes}/${anio} ${hora}:${minutos}`;
-}
-
-// Teléfono argentino: código de área + número, sin el 0 ni el 15,
-// 10 números en total. El campo es opcional, vacío también es válido.
-function telefonoEsValido(telefono) {
-  const limpio = telefono.replace(/\D/g, "");
-  if (limpio === "") return true;
-  return limpio.length === 10;
-}
-
-// Para avisar antes de crear sin querer un cliente con el mismo
-// nombre que otro ya cargado
-function existeClienteConNombre(datos, nombre, excluirId) {
-  const nombreNormalizado = nombre.trim().toLowerCase();
-  return datos.clientes.some(
-    (c) => c.id !== excluirId && c.nombre.trim().toLowerCase() === nombreNormalizado
-  );
-}
-
-function escaparHtml(texto) {
-  const div = document.createElement("div");
-  div.textContent = texto;
-  return div.innerHTML;
 }
 
 /* -------------------------------------------
